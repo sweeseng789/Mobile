@@ -5,66 +5,66 @@ package com.ss.mobileframework.Utility;
  */
 public class Vector3
 {
-    float x, y, z;
+    public float x, y, z;
     final double EPSILON = Float.MIN_VALUE;
 
-    Vector3()
+    public Vector3()
     {
         setZero();
     }
 
-    Vector3(float x, float y, float z)
+    public Vector3(float x, float y, float z)
     {
         this.x = x;
         this.y = y;
         this.z = y;
     }
 
-    Vector3(Vector3 pos)
+    public Vector3(Vector3 pos)
     {
         this.x = pos.x;
         this.y = pos.y;
         this.z = pos.z;
     }
 
-    void set(float x, float y, float z)
+    public void set(float x, float y, float z)
     {
         this.x = x;
         this.y = y;
         this.z = z;
     }
 
-    void setZero()
+    public void setZero()
     {
         x = y = z = 0.f;
     }
 
-    boolean isEqual(float a, float b)
+    public boolean isEqual(float a, float b)
     {
         return a - b <= EPSILON && b - a <= EPSILON;
     }
 
-    boolean isZero()
+    public boolean isZero()
     {
         return isEqual(x, 0.f) && isEqual(y, 0.f) && isEqual(z, 0.f);
     }
 
-    float length()
+    public float length()
     {
         return (float)(Math.sqrt(x * x + y * y + z * z));
     }
 
-    float lengthSquared()
+    public float lengthSquared()
     {
         return x * x + y * y + z * z;
     }
 
-    float dot(Vector3 rhs)
+    public float dot(Vector3 rhs)
     {
         return x * rhs.x + y * rhs.y + z * rhs.z;
     }
 
-    Vector3 cross(Vector3 rhs)
+    public Vector3 cross(Vector3 rhs)
     {
         Vector3 returnV3 = new Vector3();
         returnV3.x = y * rhs.z - z * rhs.y;
@@ -74,7 +74,7 @@ public class Vector3
         return returnV3;
     }
 
-    Vector3 normalized()
+    public Vector3 normalized()
     {
         float d = length();
         Vector3 returnV3 = new Vector3();
@@ -85,7 +85,7 @@ public class Vector3
         return  returnV3;
     }
 
-    Vector3 normalize()
+    public Vector3 normalize()
     {
         float d = length();
 

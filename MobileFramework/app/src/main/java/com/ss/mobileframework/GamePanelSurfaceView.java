@@ -13,6 +13,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.ss.mobileframework.Text.CText;
+import com.ss.mobileframework.GameObject;
+import com.ss.mobileframework.Utility.Vector3;
+
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
@@ -31,6 +34,11 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     private short m_Background_x = 0, m_Background_y = 0;
 
     // 4a) bitmap array to stores 4 images of the spaceship
+    GameObject Player = new GameObject(
+            GameObject.GO_TYPE.Player,
+            new Vector3(0, 0, 0),
+            new SpriteAnimation(BitmapFactory.decodeResource(getResources(),R.drawable.flystone), 320, 64, 5,5)
+        );
     private Bitmap[] m_Spaceship = new Bitmap[4];
 
     // 4b) Variable as an index to keep track of the spaceship images
@@ -152,22 +160,25 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 //Text Update
                 text.setText(Float.toString(FPS));
 
-                if(mx != mX)
+                if(Player.getPos().x != mX)
                 {
-                    if(mx < mX)
-                        mx += (mX-mx)/10;
+                    if(Player.getPos().x < mX)
+                        Player.getPos().x += (mX-Player.getPos().x)/10;
 
-                    if(mx > mX)
-                        mx -= (mx-mX)/10;
+                    if(Player.getPos().x > mX)
+                        Player.getPos().x -= (Player.getPos().x-mX)/10;
                 }
-                if(my != mY)
+                if(Player.getPos().y != mY)
                 {
-                    if(my < mY)
-                        my += (mY-my)/10;
+                    if(Player.getPos().y < mY)
+                        Player.getPos().y += (mY-Player.getPos().y)/10;
 
-                    if(my > mY)
-                        my -= (my-mY)/10;
+                    if(Player.getPos().y > mY)
+                        Player.getPos().y -= (Player.getPos().y-mY)/10;
                 }
+
+
+                Player.getSprite().update(System.currentTimeMillis());
             }
             break;
         }
@@ -198,7 +209,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         // 4d) Draw the spaceships
         canvas.drawBitmap(m_Spaceship[m_SpaceshipIndex], mx, my, null);
-
+        Player.getSprite().draw(canvas);
 
         // Bonus) To print FPS on the screen
         canvas.drawText(text.getText(), text.getPos().x, text.getPos().y, text.getPaint()); // Align text to top left
@@ -215,8 +226,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         if(event.getAction() == MotionEvent.ACTION_DOWN)
         {
             // New location where the image to land on
-            mX= (short)(X -m_Spaceship[m_SpaceshipIndex].getWidth()/2);
-            mY= (short)(Y -m_Spaceship[m_SpaceshipIndex].getHeight()/2);
+            mX= (short)(X); //-m_Spaceship[m_SpaceshipIndex].getWidth()/2);
+            mY= (short)(Y); //-m_Spaceship[m_SpaceshipIndex].getHeight()/2);
         }
         return super.onTouchEvent(event);
     }
