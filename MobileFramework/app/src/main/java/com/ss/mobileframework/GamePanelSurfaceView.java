@@ -37,7 +37,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     GameObject Player = new GameObject(
             GameObject.GO_TYPE.Player,
             new Vector3(0, 0, 0),
-            new SpriteAnimation(BitmapFactory.decodeResource(getResources(),R.drawable.flystone), 320, 64, 5,5)
+            new SpriteAnimation(BitmapFactory.decodeResource(getResources(),R.drawable.chara), 319, 60, 18,9)
         );
     private Bitmap[] m_Spaceship = new Bitmap[4];
 
@@ -209,7 +209,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         // 4d) Draw the spaceships
         canvas.drawBitmap(m_Spaceship[m_SpaceshipIndex], mx, my, null);
-        Player.getSprite().draw(canvas);
+        Player.getSprite().draw(canvas, (int)Player.getTopLeft().x, (int)Player.getTopLeft().y);
 
         // Bonus) To print FPS on the screen
         canvas.drawText(text.getText(), text.getPos().x, text.getPos().y, text.getPaint()); // Align text to top left

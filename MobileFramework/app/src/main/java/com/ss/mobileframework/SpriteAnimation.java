@@ -116,6 +116,8 @@ public class SpriteAnimation{
         if (gameTime> frameTicker+ framePeriod)
         {
             frameTicker= gameTime;
+            currentFrame++;
+
             if (currentFrame>= frame)       // frame = total no. of frames and currentFramestarts from 0
             {
                 currentFrame= 0;            // reached end of frame , reset to 0
@@ -132,6 +134,15 @@ public class SpriteAnimation{
         // destRectis the area defined for the image of each frame to be drawn
 
         Rect destRect= new Rect(getX(), getY(), getX() + spriteWidth, getY() + spriteHeight);
+        canvas.drawBitmap(bitmap, sourceRect, destRect, null);
+    }
+
+    public void draw(Canvas canvas, int translateX, int translateY)
+    {
+        // Image of each frame is defined by sourceRect
+        // destRectis the area defined for the image of each frame to be drawn
+
+        Rect destRect= new Rect(translateX, translateY, translateX + spriteWidth, translateY + spriteHeight);
         canvas.drawBitmap(bitmap, sourceRect, destRect, null);
     }
 }
