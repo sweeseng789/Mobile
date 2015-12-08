@@ -32,12 +32,16 @@ public class Item extends GameObject
     {
         this.type = type;
         this.bitmap = bitmap;
+        init();
+        paint = new Paint();
+    }
+    //==============Init==============//
+    public void init()
+    {
         active = false;
         MinMaxSpeed = 200;
         randVars();
         respawnTime = (float) (Math.random() * 15 + 5); //from 5 to 15
-
-        paint = new Paint();
     }
 
     //==============GETTER==============//
@@ -90,22 +94,22 @@ public class Item extends GameObject
         if(type == TYPE.s_CABBAGE)
         {
             pos.x = 0;
-            while (pos.x < 125 || pos.x > screenWidth - 125 - getBitmap().getWidth())
+            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth()) //while it spawns on the pavement
                 pos.x = (float) Math.random() * screenWidth + 1;
             pos.y = -50;
-            respawnTime = (float) (Math.random() * 10 + 5); //from 10 to 2
+            respawnTime = (float) (Math.random() * 10 + 5);
             while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
                 speed = (float) (Math.random() * (MinMaxSpeed) + (MinMaxSpeed-50)); //from 600 to 300
         }
         else if(type == TYPE.s_DRUGS)
         {
             pos.x = 0;
-            while (pos.x < 125 || pos.x > screenWidth - 125 - getBitmap().getWidth())
+            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth())
                 pos.x = (float) Math.random() * screenWidth + 1;
             pos.y = -50;
-            respawnTime = (float) (Math.random() * 5 + 1); //from 10 to 2
+            respawnTime = (float) (Math.random() * 5 + 1);
             while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
-                speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50)); //from 600 to 300
+                speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50));
         }
     }
 }

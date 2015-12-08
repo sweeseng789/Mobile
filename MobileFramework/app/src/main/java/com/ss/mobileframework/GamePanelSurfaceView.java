@@ -22,6 +22,7 @@ import java.util.Vector;
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
+    private Gamepage game;
 
     // Implement this interface to receive information about changes to the surface.
 
@@ -39,6 +40,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     //Text
     CText text = new CText();
     CText debug = new CText();
+    CText pickUpText = new CText();
+    float pickUpTextDuration = -1;
 
     // Variables for FPS
     public float FPS;
@@ -49,7 +52,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     private short mx = 0, my = 0;
 
     // Variable for Game State check
-    private short GameState;
+    enum States
+    {
+        s_play,
+        s_lose
+    };
+    private States GameState;
 
     //Player
     Player player;
@@ -96,6 +104,13 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         debug.setColor(255, 255, 128, 0);
         debug.getPos().set(0, 100, 0);
 
+        pickUpText.setScale(30.f);
+        pickUpText.setColor(255, 0, 100, 255);
+        pickUpText.setText("Good");
+
+        //set game state
+        GameState = States.s_play;
+
         //let GameObjects know about screen height and width
         GameObject.screenWidth = m_screenWidth;
         GameObject.screenHeight = m_screenHeight;
@@ -103,6 +118,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         //Initialize Player
         player = new Player();
         player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
+        player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
+        player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
 
         //Initialize item list
         m_cItemList = new Vector<>();
@@ -126,18 +143,41 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         retryText.setText("Retry");
         retryText.setScale(70.f);
         retryText.setColor(255, 255, 255, 0);
-        retryText.getPos().set(m_screenWidth/4 - (float)(70 * retryText.getText().length()/2), m_screenHeight / 2, 0);
+        retryText.getPos().set(m_screenWidth/4 - (float)(35 * retryText.getText().length()/2), m_screenHeight / 2, 0);
 
         exitText.setText("Exit");
         exitText.setScale(70.f);
         exitText.setColor(255, 255, 255, 0);
-        exitText.getPos().set(m_screenWidth/4 * 3 - (float)(70 * exitText.getText().length()/2), m_screenHeight/2, 0);
+        exitText.getPos().set(m_screenWidth/4 * 3 - (float)(35 * exitText.getText().length()/2), m_screenHeight/2, 0);
 
         // Create the game loop thread
         myThread = new GameThread(getHolder(), this);
 
         // Make the GamePanel focusable so it can handle events
         setFocusable(true);
+    }
+
+    public void init()
+    {
+        //set game state
+        GameState = States.s_play;
+
+        //Initialize Player
+        player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
+        player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
+        player.setScore(0);
+
+        //Initialize item list
+
+        for(Item item : m_cItemList)
+        {
+            item.init();
+        }
+
+        //init enemy
+        enemy.init();
+
+        pickUpTextDuration = -1;
     }
 
     //must implement inherited abstract methods
@@ -184,7 +224,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         switch (GameState)
         {
-            case 0:
+            case s_play:
             {
                 m_Background_y += 500 * dt;
                 if(m_Background_y > m_screenHeight)
@@ -202,6 +242,13 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 float y1 = player.getPos().y;
                 float w1 = player.getSprite().getSpriteWidth();
                 float h1 = player.getSprite().getSpriteHeight();
+
+                //Text Update
+                float text_x = player.getPos().x + player.getSprite().getSpriteWidth()/(pickUpText.getText().length());
+                float text_y = player.getPos().y - player.getSprite().getSpriteHeight()/8;
+                pickUpText.getPos().set(text_x, text_y, 0);
+                if(pickUpTextDuration > 0)
+                    pickUpTextDuration -= dt;
 
                 //Item Update
                 for(Item item : m_cItemList)
@@ -226,13 +273,20 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                             item.randVars();
                             item.setActive(false);
                             enemy.setSpeedIncreaseForSomeTime(-80, 2);
+
+                            pickUpText.setColor(255, 0, 100, 255);
+                            pickUpText.setText("Good");
                         }
                         else if(item.isDrug())
                         {
                             item.randVars();
                             item.setActive(false);
                             enemy.setSpeedIncreaseForSomeTime(50, 1);
+
+                            pickUpText.setColor(255, 255, 0, 0);
+                            pickUpText.setText("Bad");
                         }
+                        pickUpTextDuration = 1;
                     }
                 }
 
@@ -244,7 +298,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 float h2 = enemy.getBitmap().getHeight();
                 if (CheckCollision((int) x2, (int) y2, (int) w2, (int) h2, (int) x1, (int) y1, (int) w1, (int) h1) && enemy.getActive())
                 {
-                    GameState = 1;
+                    GameState = States.s_lose;
                 }
             }
             break;
@@ -256,10 +310,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     {
         switch (GameState)
         {
-            case 0:
+            case s_play:
                 RenderGameplay(canvas);
                 break;
-            case 1:
+            case s_lose:
                 RenderLose(canvas);
         }
     }
@@ -292,8 +346,11 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         //Debug text
         canvas.drawText(text.getText(), text.getPos().x, text.getPos().y, text.getPaint()); // Align text to top left
         canvas.drawText(player.getText().getText(), player.getText().getPos().x, player.getText().getPos().y, player.getText().getPaint());
+        if(pickUpTextDuration > 0)
+        canvas.drawText(pickUpText.getText(), pickUpText. getPos().x, pickUpText.getPos().y, pickUpText.getPaint());
     }
 
+    //render lose screen
     public void RenderLose(Canvas canvas)
     {
         // 2) Re-draw 2nd image after the 1st image ends
@@ -319,8 +376,28 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // New location where the image to land on
-            player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
-            player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+            switch (GameState) {
+                case s_play:
+                    //limit player on the road
+                    if(X < m_screenWidth/7.2)
+                        X = (short)(m_screenWidth/7.2);
+                    if(X > (m_screenWidth - m_screenWidth/7.2))
+                        X = (short)(m_screenWidth - m_screenWidth/7.2);
+
+                    player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+                    player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+                    break;
+                case s_lose:
+                    if(X < m_screenWidth)
+                    {
+                        init();
+                    }
+                    else
+                    {
+
+                    }
+                    break;
+            }
         }
         return super.onTouchEvent(event);
     }

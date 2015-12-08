@@ -15,12 +15,18 @@ public class Enemy extends GameObject
     //==============CONSTRUCTOR==============//
     public Enemy(Bitmap bitmap)
     {
+        init();
+        this.bitmap = bitmap;
+        active = true;
+    }
+
+    //==============Init==============//
+    public void init()
+    {
         pos.x = 0;
         pos.y = screenHeight;
         speed = defaultSpeed;
         timeOfSpeedIncrease = -1;
-        this.bitmap = bitmap;
-        active = true;
     }
 
     public void update(double dt)

@@ -48,47 +48,50 @@ public class Player extends GameObject
     }
 
     //==============SETTER==============//
+    public void setScore (int score)
+    {
+        this.score = score;
+    }
+
     public void update(double dt, long SA_dt)
     {
         //Pos update
-        Vector3 diff = new Vector3();
-        diff.x = newPos.x - pos.x;
-        diff.y = newPos.y - pos.y;
+        if(dt < 1) {
+            Vector3 diff = new Vector3();
+            diff.x = newPos.x - pos.x;
+            diff.y = newPos.y - pos.y;
 
-        if(diff.length() > 5)
-        {
-            Vector3 normalizedPos = new Vector3();
-            normalizedPos.x = newPos.x - pos.x;
-            normalizedPos.y = newPos.y - pos.y;
-            normalizedPos.normalize();
+            if (diff.length() > 5) {
+                Vector3 normalizedPos = new Vector3();
+                normalizedPos.x = newPos.x - pos.x;
+                normalizedPos.y = newPos.y - pos.y;
+                normalizedPos.normalize();
 
-            vel.x += normalizedPos.x * velocity * dt;
-            vel.y += normalizedPos.y * velocity * dt;
+                vel.x += normalizedPos.x * velocity * dt;
+                vel.y += normalizedPos.y * velocity * dt;
 
-            //Update Vel
-            if(!vel.isZero())
-            {
-                float forceX = 0 - vel.x;
-                vel.x += forceX * dt * 8;
+                //Update Vel
+                if (!vel.isZero()) {
+                    float forceX = 0 - vel.x;
+                    vel.x += forceX * dt * 8;
 
-                float forceY = 0 - vel.y;
-                vel.y += forceY * dt * 8;
+                    float forceY = 0 - vel.y;
+                    vel.y += forceY * dt * 8;
+                }
+            } else {
+                vel.setZero();
             }
+
+            //Update Text
+            text.setText(Integer.toString(score));
+
+            //Sprite animation update
+            sprite.update(SA_dt);
+
+            //Update Pos
+            pos.x += vel.x;
+            pos.y += vel.y;
         }
-        else
-        {
-            vel.setZero();
-        }
-
-        //Update Text
-        text.setText(Integer.toString(score));
-
-        //Sprite animation update
-        sprite.update(SA_dt);
-
-        //Update Pos
-        pos.x += vel.x;
-        pos.y += vel.y;
     }
 
     public void addScore(double scoreToAdd)
