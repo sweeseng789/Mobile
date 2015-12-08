@@ -11,8 +11,9 @@ import android.widget.Button;
 public class Mainmenu extends Activity implements View.OnClickListener
 {
     private Button Start_Button;
-    private Button Options_Button;
     private Button Help_Button;
+    private Button Highscore_Button;
+    private Button Exit_Button;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,8 +29,14 @@ public class Mainmenu extends Activity implements View.OnClickListener
         Start_Button = (Button)findViewById(R.id.Start_Button);
         Start_Button.setOnClickListener(this);
 
-        Options_Button = (Button)findViewById(R.id.options_Button);
-        Options_Button.setOnClickListener(this);
+        Highscore_Button = (Button)findViewById(R.id.Highscore_Button);
+        Highscore_Button.setOnClickListener(this);
+
+        Help_Button = (Button)findViewById(R.id.Help_Button);
+        Help_Button.setOnClickListener(this);
+
+        Exit_Button = (Button)findViewById(R.id.Exit_Button);
+        Exit_Button.setOnClickListener(this);
     }
 
     public void onClick(View v)
@@ -40,15 +47,19 @@ public class Mainmenu extends Activity implements View.OnClickListener
         {
             intent.setClass(this, Gamepage.class);
         }
-        else if(v == Options_Button)
+        else if(v == Highscore_Button)
         {
-            intent.setClass(this, Optionspage.class);
+
         }
         else if (v == Help_Button)
         {
-            //intent.setClass(this, Helppage.class);
+            intent.setClass(this, Helppage.class);
         }
 
+        else if (v == Exit_Button)
+        {
+
+        }
         startActivity(intent);
     }
 

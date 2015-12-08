@@ -8,7 +8,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 
-public class Optionspage extends Activity implements View.OnClickListener
+public class Helppage extends Activity implements View.OnClickListener
 {
     private Button Back_Button;
 
@@ -21,7 +21,7 @@ public class Optionspage extends Activity implements View.OnClickListener
         //Hide top bar
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(R.layout.optionspage);
+        setContentView(R.layout.helppage);
 
         Back_Button = (Button)findViewById(R.id.back_Button);
         Back_Button.setOnClickListener(this);

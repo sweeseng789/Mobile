@@ -83,6 +83,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         // Context is the current state of the application/object
         super(context);
 
+        game = (Gamepage)context;
+
         // Adding the callback (this) to the surface holder to intercept events
         getHolder().addCallback(this);
 
@@ -388,13 +390,13 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
                     break;
                 case s_lose:
-                    if(X < m_screenWidth)
+                    if(X < m_screenWidth/2)
                     {
                         init();
                     }
                     else
                     {
-                        //break from game loop
+                        game.finish();
                     }
                     break;
             }
