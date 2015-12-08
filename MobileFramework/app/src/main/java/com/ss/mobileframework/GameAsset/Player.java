@@ -91,7 +91,7 @@ public class Player extends GameObject
         pos.y += vel.y;
     }
 
-    public void addScore(int scoreToAdd)
+    public void addScore(double scoreToAdd)
     {
         score += scoreToAdd;
     }

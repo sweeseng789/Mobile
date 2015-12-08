@@ -16,7 +16,7 @@ public class GameObject
     protected boolean active;
     protected Bitmap bitmap; //For displaying image only
     protected SpriteAnimation sprite; //For displaying Sprite Animation
-
+    public static int screenWidth, screenHeight;
     //==============CONSTRUCTOR==============//
     public GameObject()
     {
@@ -24,7 +24,6 @@ public class GameObject
         sprite = new SpriteAnimation();
         active = false;
     }
-
 
     //==============SETTER==============//
     public void setSpriteAnimation(Bitmap bitmap, int x, int y, int fps, int frameCount)

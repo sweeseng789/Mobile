@@ -4,19 +4,19 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Rect;
-import android.support.annotation.DimenRes;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.ss.mobileframework.GameAsset.Enemy;
+import com.ss.mobileframework.GameAsset.GameObject;
 import com.ss.mobileframework.GameAsset.Item;
 import com.ss.mobileframework.Text.CText;
 import com.ss.mobileframework.GameAsset.Player;
-import com.ss.mobileframework.Utility.Vector3;
 
-import java.util.Random;
+import org.w3c.dom.Text;
+
 import java.util.Vector;
 
 
@@ -57,6 +57,14 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     //Items
     Vector<Item> m_cItemList;
 
+    //Enemy
+    Enemy enemy;
+
+    //Game over vars
+    private Bitmap loseScreen;
+    CText retryText = new CText();
+    CText exitText = new CText();
+
 //    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 //    double width = screenSize.getWidth();
 //    double height = screenSize.getHeight();
@@ -88,18 +96,42 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         debug.setColor(255, 255, 128, 0);
         debug.getPos().set(0, 100, 0);
 
+        //let GameObjects know about screen height and width
+        GameObject.screenWidth = m_screenWidth;
+        GameObject.screenHeight = m_screenHeight;
+
         //Initialize Player
         player = new Player();
-        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(),R.drawable.player), 320, 64, 6, 6);
+        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
 
         //Initialize item list
         m_cItemList = new Vector<>();
 
-        Item item = new Item();
-        item.setBitmap(BitmapFactory.decodeResource(getResources(),R.drawable.apple));
-        item.getPos().set(400, 500, 0);
+        Item item = new Item(Item.TYPE.s_CABBAGE, BitmapFactory.decodeResource(getResources(),R.drawable.cabage));
         item.getPaint().setTextSize(10);
         m_cItemList.add(item);
+
+        for(int i = 0; i < 3; ++i) {
+            item = new Item(Item.TYPE.s_DRUGS, BitmapFactory.decodeResource(getResources(), R.drawable.weed));
+            item.getPaint().setTextSize(10);
+            m_cItemList.add(item);
+        }
+
+        //init enemy
+        enemy = new Enemy(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.rainbow), m_screenWidth, m_screenHeight, true));
+
+        //game over stuff
+        loseScreen = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.lose), m_screenWidth, m_screenHeight, true);
+
+        retryText.setText("Retry");
+        retryText.setScale(70.f);
+        retryText.setColor(255, 255, 255, 0);
+        retryText.getPos().set(m_screenWidth/4 - (float)(70 * retryText.getText().length()/2), m_screenHeight / 2, 0);
+
+        exitText.setText("Exit");
+        exitText.setScale(70.f);
+        exitText.setColor(255, 255, 255, 0);
+        exitText.getPos().set(m_screenWidth/4 * 3 - (float)(70 * exitText.getText().length()/2), m_screenHeight/2, 0);
 
         // Create the game loop thread
         myThread = new GameThread(getHolder(), this);
@@ -166,6 +198,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
                 //Player Update
                 player.update(dt, System.currentTimeMillis());
+                float x1 = player.getPos().x;
+                float y1 = player.getPos().y;
+                float w1 = player.getSprite().getSpriteWidth();
+                float h1 = player.getSprite().getSpriteHeight();
 
                 //Item Update
                 for(Item item : m_cItemList)
@@ -176,26 +212,39 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 //                    {
 //                        player.addScore(10);
 //                    }
-
-                    float x1 = player.getPos().x;
-                    float y1 = player.getPos().y;
-                    float w1 = player.getSprite().getSpriteWidth();
-                    float h1 = player.getSprite().getSpriteHeight();
-
                     float x2 = item.getPos().x;
                     float y2 = item.getPos().y;
                     float w2 = item.getBitmap().getWidth();
                     float h2 = item.getBitmap().getHeight();
 
                     //Collision Check with player
-                    if(CheckCollision((int)x1, (int)y1, (int)w1, (int)h1, (int)x2, (int)y2, (int)w2, (int)h2))
+                    if (CheckCollision((int) x1, (int) y1, (int) w1, (int) h1, (int) x2, (int) y2, (int) w2, (int) h2) && item.getActive())
                     {
-                        player.addScore(10);
-
-                        Random r = new Random();
-                        item.getPos().x = r.nextInt(m_screenWidth - item.getBitmap().getWidth());
-                        item.getPos().y = r.nextInt(m_screenHeight - item.getBitmap().getHeight());
+                        if(item.isCabbage())
+                        {
+                            player.addScore(10);
+                            item.randVars();
+                            item.setActive(false);
+                            enemy.setSpeedIncreaseForSomeTime(-80, 2);
+                        }
+                        else if(item.isDrug())
+                        {
+                            item.randVars();
+                            item.setActive(false);
+                            enemy.setSpeedIncreaseForSomeTime(50, 1);
+                        }
                     }
+                }
+
+                //update enemy
+                enemy.update(dt);
+                float x2 = enemy.getPos().x;
+                float y2 = enemy.getPos().y;
+                float w2 = enemy.getBitmap().getWidth();
+                float h2 = enemy.getBitmap().getHeight();
+                if (CheckCollision((int) x2, (int) y2, (int) w2, (int) h2, (int) x1, (int) y1, (int) w1, (int) h1) && enemy.getActive())
+                {
+                    GameState = 1;
                 }
             }
             break;
@@ -210,6 +259,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             case 0:
                 RenderGameplay(canvas);
                 break;
+            case 1:
+                RenderLose(canvas);
         }
     }
 
@@ -231,15 +282,32 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         //Render Items
         for(Item item: m_cItemList)
         {
-            canvas.drawBitmap(item.getBitmap(), item.getPos().x, item.getPos().y, item.getPaint());
+            if(item.getActive())
+                canvas.drawBitmap(item.getBitmap(), item.getPos().x, item.getPos().y, item.getPaint());
         }
 
-        //Render Item
+        //Render Enemy
+        canvas.drawBitmap(enemy.getBitmap(), enemy.getPos().x, enemy.getPos().y, null);
 
         //Debug text
         canvas.drawText(text.getText(), text.getPos().x, text.getPos().y, text.getPaint()); // Align text to top left
         canvas.drawText(player.getText().getText(), player.getText().getPos().x, player.getText().getPos().y, player.getText().getPaint());
     }
+
+    public void RenderLose(Canvas canvas)
+    {
+        // 2) Re-draw 2nd image after the 1st image ends
+        if(canvas == null) //New Canvas
+        {
+            return;
+        }
+
+        canvas.drawBitmap(loseScreen, 0, 0, null);
+
+        canvas.drawText(retryText.getText(), retryText.getPos().x, retryText.getPos().y, retryText.getPaint());
+        canvas.drawText(exitText.getText(), exitText.getPos().x, exitText.getPos().y, exitText.getPaint());
+    }
+
 
     @Override
     public boolean onTouchEvent(MotionEvent event)
@@ -249,11 +317,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         short X = (short)event.getX();
         short Y = (short) event.getY();
 
-        if(event.getAction() == MotionEvent.ACTION_DOWN)
-        {
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
             // New location where the image to land on
-            player.getNewPos().x = (short)(X - player.getSprite().getBitmap().getWidth() / 13);
-            player.getNewPos().y = (short)(Y - player.getSprite().getBitmap().getHeight() / 2);
+            player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+            player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
         }
         return super.onTouchEvent(event);
     }
