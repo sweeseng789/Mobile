@@ -394,7 +394,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     }
                     else
                     {
-
+                        //break from game loop
                     }
                     break;
             }
