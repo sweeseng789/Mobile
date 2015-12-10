@@ -371,37 +371,56 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     @Override
     public boolean onTouchEvent(MotionEvent event)
     {
-
         // 5) In event of touch on screen, the spaceship will relocate to the point of touch
         short X = (short)event.getX();
         short Y = (short) event.getY();
 
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            // New location where the image to land on
-            switch (GameState) {
-                case s_play:
-                    //limit player on the road
-                    if(X < m_screenWidth/7.2)
-                        X = (short)(m_screenWidth/7.2);
-                    if(X > (m_screenWidth - m_screenWidth/7.2))
-                        X = (short)(m_screenWidth - m_screenWidth/7.2);
+        int action = event.getAction();
 
-                    player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
-                    player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
-                    break;
-                case s_lose:
-                    if(X < m_screenWidth/2)
+        switch(action)
+        {
+            case MotionEvent.ACTION_DOWN:
+            {
+                switch (GameState)
+                {
+                    case s_play:
                     {
-                        init();
-                    }
-                    else
-                    {
-                        game.finish();
+                        //limit player on the road
+                        if (X < m_screenWidth / 7.2)
+                            X = (short) (m_screenWidth / 7.2);
+                        if (X > (m_screenWidth - m_screenWidth / 7.2))
+                            X = (short) (m_screenWidth - m_screenWidth / 7.2);
+
+                        player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+                        player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
                     }
                     break;
+                    case s_lose:
+                    {
+                        if (X < m_screenWidth / 2) {
+                            init();
+                        } else {
+                            game.finish();
+                        }
+                    }
+                    break;
+                }
             }
+            break;
+            case MotionEvent.ACTION_MOVE:
+            {
+                //limit player on the road
+                if (X < m_screenWidth / 7.2)
+                    X = (short) (m_screenWidth / 7.2);
+                if (X > (m_screenWidth - m_screenWidth / 7.2))
+                    X = (short) (m_screenWidth - m_screenWidth / 7.2);
+
+                player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+                player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+            }
+            break;
         }
-        return super.onTouchEvent(event);
+        return true;
     }
 
     public boolean CheckCollision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2)
