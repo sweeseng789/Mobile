@@ -8,6 +8,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import com.ss.mobileframework.Highscore.Highscore;
+
 public class Mainmenu extends Activity implements View.OnClickListener
 {
     private Button Start_Button;
@@ -49,7 +51,7 @@ public class Mainmenu extends Activity implements View.OnClickListener
         }
         else if(v == Highscore_Button)
         {
-
+            intent.setClass(this, Highscore.class);
         }
         else if (v == Help_Button)
         {
@@ -60,6 +62,7 @@ public class Mainmenu extends Activity implements View.OnClickListener
         {
 
         }
+
         startActivity(intent);
     }
 

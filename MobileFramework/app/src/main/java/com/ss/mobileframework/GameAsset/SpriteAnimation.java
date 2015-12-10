@@ -1,4 +1,4 @@
-package com.ss.mobileframework;
+package com.ss.mobileframework.GameAsset;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;

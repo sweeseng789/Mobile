@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -17,40 +18,36 @@ import com.ss.mobileframework.GameAsset.Player;
 
 import org.w3c.dom.Text;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.util.Vector;
 
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
-    private Gamepage game;
-
-    // Implement this interface to receive information about changes to the surface.
-
+    private Gamepage game;    // Implement this interface to receive information about changes to the surface.
     private GameThread myThread = null; // Thread to control the rendering
-
-    // 1a) Variables used for background rendering
     private Bitmap m_Background, m_BackgroundScale; //Used for rendering background
-
-    // 1b) Define Screen width and Screen height as integer
-    int m_screenWidth, m_screenHeight;
-
-    // 1c) Variables for defining background start and end point
-    private short m_Background_x = 0, m_Background_y = 0;
-
+    int m_screenWidth, m_screenHeight;     // 1b) Define Screen width and Screen height as integer
+    private short m_Background_x = 0, m_Background_y = 0;     // 1c) Variables for defining background start and end point
     //Text
     CText text = new CText();
     CText debug = new CText();
     CText pickUpText = new CText();
     float pickUpTextDuration = -1;
-
     // Variables for FPS
     public float FPS;
     float deltaTime;
     long dt;
-
     //Variable for location to move to
     private short mx = 0, my = 0;
-
     // Variable for Game State check
     enum States
     {
@@ -73,9 +70,11 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     CText retryText = new CText();
     CText exitText = new CText();
 
-//    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-//    double width = screenSize.getWidth();
-//    double height = screenSize.getHeight();
+    Vector<Integer> highscoreList;
+    boolean checkAgainstPreviousScore;
+    File f;
+    InputStream inputStream;
+    OutputStream outputStream;
 
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context)
@@ -145,12 +144,35 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         retryText.setText("Retry");
         retryText.setScale(70.f);
         retryText.setColor(255, 255, 255, 0);
-        retryText.getPos().set(m_screenWidth/4 - (float)(35 * retryText.getText().length()/2), m_screenHeight / 2, 0);
+        retryText.getPos().set(m_screenWidth / 4 - (float) (35 * retryText.getText().length() / 2), m_screenHeight / 2, 0);
 
         exitText.setText("Exit");
         exitText.setScale(70.f);
         exitText.setColor(255, 255, 255, 0);
-        exitText.getPos().set(m_screenWidth/4 * 3 - (float)(35 * exitText.getText().length()/2), m_screenHeight/2, 0);
+        exitText.getPos().set(m_screenWidth / 4 * 3 - (float) (35 * exitText.getText().length() / 2), m_screenHeight / 2, 0);
+
+        checkAgainstPreviousScore = false;
+        highscoreList = new Vector<>();
+
+        try {
+            inputStream = context.getAssets().open("highscore.txt");
+            f = context.getFileStreamPath("highscore.txt");
+            outputStream = new FileOutputStream(f);
+        }catch (IOException e){
+
+        }
+        try
+        {
+            BufferedReader reader = new BufferedReader( new InputStreamReader(context.getAssets().open("highscore.txt")));
+            String mline;
+            while ((mline = reader.readLine()) != null)
+            {
+                highscoreList.add(Integer.parseInt(mline));
+            }
+        }
+        catch (IOException e)
+        {
+        }
 
         // Create the game loop thread
         myThread = new GameThread(getHolder(), this);
@@ -180,6 +202,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         enemy.init();
 
         pickUpTextDuration = -1;
+        checkAgainstPreviousScore = false;
     }
 
     //must implement inherited abstract methods
@@ -257,10 +280,6 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 {
                     item.update(dt);
 
-//                    if(player.getBound_SA().intersect(item.getBound_Image()))
-//                    {
-//                        player.addScore(10);
-//                    }
                     float x2 = item.getPos().x;
                     float y2 = item.getPos().y;
                     float w2 = item.getBitmap().getWidth();
@@ -304,6 +323,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 }
             }
             break;
+
+            case s_lose:
+                break;
         }
     }
 
@@ -317,6 +339,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 break;
             case s_lose:
                 RenderLose(canvas);
+                break;
         }
     }
 
@@ -329,7 +352,6 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             return;
         }
         canvas.drawBitmap(m_BackgroundScale, m_Background_x, m_Background_y, null);
-        //canvas.drawBitmap(m_BackgroundScale, m_Background_x + m_screenWidth, m_Background_y, null);
         canvas.drawBitmap(m_BackgroundScale, m_Background_x, m_Background_y - m_screenHeight, null);
 
         //Render player
@@ -375,9 +397,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         short X = (short)event.getX();
         short Y = (short) event.getY();
 
-        int action = event.getAction();
-
-        switch(action)
+        switch(event.getAction())
         {
             case MotionEvent.ACTION_DOWN:
             {
@@ -397,9 +417,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     break;
                     case s_lose:
                     {
-                        if (X < m_screenWidth / 2) {
+                        if (X < m_screenWidth / 2)
+                        {
                             init();
-                        } else {
+                        }
+                        else
+                        {
                             game.finish();
                         }
                     }

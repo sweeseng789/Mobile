@@ -3,7 +3,6 @@ package com.ss.mobileframework.GameAsset;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
 
-import com.ss.mobileframework.SpriteAnimation;
 import com.ss.mobileframework.Utility.Vector3;
 
 /**

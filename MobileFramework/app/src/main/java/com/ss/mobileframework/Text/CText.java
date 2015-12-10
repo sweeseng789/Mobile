@@ -1,8 +1,12 @@
 package com.ss.mobileframework.Text;
+import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.widget.TextView;
 
+import com.ss.mobileframework.R;
 import com.ss.mobileframework.Utility.CColor;
-import com.ss.mobileframework.Utility.Vector2;
 import com.ss.mobileframework.Utility.Vector3;
 
 /**
@@ -22,6 +26,13 @@ public class CText
         pos = new Vector3();
         color = new CColor();
         paint = new Paint();
+    }
+
+    public CText(Context context, float scale, Vector3 pos, CColor color)
+    {
+        setFont(context);
+        setScale(scale);
+        setColor(color.Alpha, color.Red, color.Green, color.Blue);
     }
 
     public void setScale(float scale)
@@ -44,11 +55,16 @@ public class CText
         paint.setARGB(color.Alpha, color.Red, color.Green, color.Blue);
     }
 
+    public void setFont(Context context)
+    {
+        Typeface myTypeface = Typeface.createFromAsset(context.getAssets(), "Supernatural_Knight.ttf");
+        paint.setTypeface(myTypeface);
+    }
+
     public Vector3 getPos()
     {
         return pos;
     }
-
 
     public Paint getPaint()
     {
@@ -58,5 +74,15 @@ public class CText
     public String getText()
     {
         return text;
+    }
+
+    public float getScale()
+    {
+        return scale;
+    }
+
+    public void renderText(Canvas canvas)
+    {
+        canvas.drawText(getText(), getPos().x, getPos().y, getPaint());
     }
 }

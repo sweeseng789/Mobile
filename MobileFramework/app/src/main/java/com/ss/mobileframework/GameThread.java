@@ -1,29 +1,34 @@
 package com.ss.mobileframework;
 
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.graphics.Canvas;
+import android.view.View;
+
+import com.ss.mobileframework.Highscore.View_Highscore;
 
 public class GameThread extends Thread
 {
-    // The actual view that handles inputs and draws to the surface
-    private GamePanelSurfaceView myView;
+    enum UPDATESTATE
+    {
+        e_GAME,
+        e_HIGHSCORE
+    };
 
-    // Surface holder that can access the physical surface
-    private SurfaceHolder holder;
-
-    // Flag to hold game state
-    private boolean isRun;
-
+    //==============VARIABLES==============//
+    UPDATESTATE state;
+    private GamePanelSurfaceView myView;    // The actual view that handles inputs and draws to the surface
+    private View_Highscore highscoreView;   // The actual view that handles inputs and draws to the surface
+    private SurfaceHolder holder;           // Surface holder that can access the physical surface
+    private boolean isRun;                  // Flag to hold game state
     private boolean isPause;
+    int frameCount = 0;                     // get actual fps
+    long lastTime = 0;                      // get actual fps
+    long lastFPSTime = 0;                   // get actual fps
+    float fps = 0;                          // get actual fps
+    float dt = 0;                           // get actual fps
 
-    // get actual fps
-    int frameCount = 0;
-    long lastTime = 0;
-    long lastFPSTime = 0;
-    float fps = 0;
-    float dt = 0;
-
-    // Constructor for this class
+    //==============CONSTRUCTOR==============//
     public GameThread(SurfaceHolder holder, GamePanelSurfaceView myView)
     {
         super();
@@ -31,8 +36,20 @@ public class GameThread extends Thread
         isPause = false; // for pause
         this.myView = myView;
         this.holder = holder;
+        state = UPDATESTATE.e_GAME;
     }
 
+    public GameThread(SurfaceHolder holder, View_Highscore myView)
+    {
+        super();
+        isRun = true;
+        isPause = false;
+        highscoreView = myView;
+        this.holder = holder;
+        state = UPDATESTATE.e_HIGHSCORE;
+    }
+
+    //==============SETTER==============//
     public void startRun(boolean r)
     {
         isRun = r;
@@ -55,12 +72,6 @@ public class GameThread extends Thread
         }
     }
 
-    //Return Pause
-    public boolean getPause()
-    {
-        return isPause;
-    }
-
     public void calculateFPS()
     {
         frameCount++;
@@ -77,52 +88,116 @@ public class GameThread extends Thread
         }
     }
 
+    public void update_Game()
+    {
+        //Update game state and render state to the screen
+        Canvas c = null;
+        try
+        {
+            c = this.holder.lockCanvas();
+            synchronized(holder)
+            {
+                if (myView != null)
+                {
+                    if (getPause() == false)
+                    {
+                        myView.update(dt, fps);
+                        myView.doDraw(c);
+                    }
+                }
+            }
+
+            synchronized(holder)
+            {
+                while (getPause()==true)
+                {
+                    try
+                    {
+                        holder.wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
+                }
+            }
+        }
+
+        finally
+        {
+            if (c!=null)
+            {
+                holder.unlockCanvasAndPost(c);
+            }
+        }
+        calculateFPS();
+    }
+
+    public void update_Highscore()
+    {
+        //Update game state and render state to the screen
+        Canvas c = null;
+        try
+        {
+            c = this.holder.lockCanvas();
+            synchronized(holder)
+            {
+                if (highscoreView != null)
+                {
+                    if (getPause() == false)
+                    {
+                        highscoreView.update(dt, fps);
+                        highscoreView.doDraw(c);
+                    }
+                }
+            }
+
+            synchronized(holder)
+            {
+                while (getPause()==true)
+                {
+                    try
+                    {
+                        holder.wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
+                }
+            }
+        }
+
+        finally
+        {
+            if (c!=null)
+            {
+                holder.unlockCanvasAndPost(c);
+            }
+        }
+        calculateFPS();
+    }
+
     @Override
     public void run()
     {
         while (isRun)
         {
-            //Update game state and render state to the screen
-            Canvas c = null;
-            try
+            switch(state)
             {
-                c = this.holder.lockCanvas();
-                synchronized(holder)
-                {
-                    if (myView != null)
-                    {
-                        if (getPause() == false)
-                        {
-                            myView.update(dt, fps);
-                            myView.doDraw(c);
-                        }
-                    }
-                }
+                case e_GAME:
+                    update_Game();
+                    break;
 
-                synchronized(holder)
-                {
-                    while (getPause()==true)
-                    {
-                        try
-                        {
-                            holder.wait();
-                        }
-                        catch (InterruptedException e)
-                        {
-                        }
-                    }
-                }
+                case e_HIGHSCORE:
+                    update_Highscore();
+                    break;
             }
-
-            finally
-            {
-                if (c!=null)
-                {
-                    holder.unlockCanvasAndPost(c);
-                }
-            }
-            calculateFPS();
         }
 
+    }
+
+    //==============GETTER==============//
+    public boolean getPause() //Return Pause
+    {
+        return isPause;
     }
 }
