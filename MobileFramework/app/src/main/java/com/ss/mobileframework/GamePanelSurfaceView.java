@@ -5,6 +5,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.SoundPool;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -75,6 +78,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     File f;
     InputStream inputStream;
     OutputStream outputStream;
+
+    MediaPlayer bgm;
+
+    //Sound
+    private SoundPool sounds;
+    private int soundcorrect, soundwrong, soundbonus;
 
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context)
@@ -174,6 +183,14 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         {
         }
 
+        bgm = MediaPlayer.create(context, R.raw.background_music);
+        bgm.setVolume(0.8f, 0.8f);
+        bgm.start();
+
+        sounds = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
+        soundcorrect = sounds.load(context, R.raw.correct, 1);
+        soundwrong = sounds.load(context, R.raw.incorrect, 1);
+
         // Create the game loop thread
         myThread = new GameThread(getHolder(), this);
 
@@ -235,6 +252,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             {
             }
         }
+
+        bgm.stop();;
+        bgm.release();
+        sounds.unload(soundcorrect);
+        sounds.unload(soundwrong);
+        sounds.release();
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
@@ -297,6 +320,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
                             pickUpText.setColor(255, 0, 100, 255);
                             pickUpText.setText("Good");
+                            sounds.play(soundcorrect, 1.f, 1.f, 0, 0, 1.5f);
                         }
                         else if(item.isDrug())
                         {
@@ -306,6 +330,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
                             pickUpText.setColor(255, 255, 0, 0);
                             pickUpText.setText("Bad");
+                            sounds.play(soundwrong, 1.f, 1.f, 0, 0, 1.5f);
                         }
                         pickUpTextDuration = 1;
                     }
