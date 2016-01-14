@@ -8,6 +8,7 @@ import android.graphics.Paint;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.os.Debug;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -32,35 +33,44 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+
+
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
-    private Gamepage game;    // Implement this interface to receive information about changes to the surface.
-    private GameThread myThread = null; // Thread to control the rendering
-    private Bitmap m_Background, m_BackgroundScale; //Used for rendering background
-    int m_screenWidth, m_screenHeight;     // 1b) Define Screen width and Screen height as integer
-    private short m_Background_x = 0, m_Background_y = 0;     // 1c) Variables for defining background start and end point
-    //Text
-    CText text = new CText();
-    CText debug = new CText();
-    CText pickUpText = new CText();
-    float pickUpTextDuration = -1;
-    // Variables for FPS
-    public float FPS;
-    float deltaTime;
-    long dt;
-    //Variable for location to move to
-    private short mx = 0, my = 0;
     // Variable for Game State check
     enum States
     {
         s_play,
         s_lose
     };
-    private States GameState;
 
-    //Player
-    Player player;
+    //==============VARIABLES==============//
+    private Gamepage game;    // Implement this interface to receive information about changes to the surface.
+    private GameThread myThread = null; // Thread to control the rendering
+    private Bitmap m_Background, m_BackgroundScale; //Used for rendering background
+    int m_screenWidth, m_screenHeight;     // 1b) Define Screen width and Screen height as integer
+    private short m_Background_x = 0, m_Background_y = 0;     // 1c) Variables for defining background start and end point
+
+    //Text
+    CText text = new CText();
+    CText debug = new CText();
+    CText pickUpText = new CText();
+    float pickUpTextDuration = -1;
+
+    // Variables for FPS
+    public float FPS;
+    float deltaTime;
+    long dt;
+
+    //Variable for location to move to
+    private short mx = 0, my = 0;
+
+    private States GameState; //Game State
+
+    Player player; //Player
 
     //Items
     Vector<Item> m_cItemList;
@@ -85,6 +95,28 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     private SoundPool sounds;
     private int soundcorrect, soundwrong, soundbonus;
 
+    //Load Shared
+    int highscore;
+    SharedPreferences sharePrefscore;
+    Editor editor;
+
+    //Method 2
+    /*
+    intent.putExtre("highscore", highscore)
+    intent.setclass(getcontext(), scorepage.class);
+    activityTracker.startActivity(intent):
+     */
+
+    /*
+    if(score > highscore)
+    {
+        editor.putInt("keyhighscore", highscore);
+        editor.commiit();
+    }
+    */
+
+
+
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context)
     {
@@ -104,6 +136,11 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         // 1e)load the image when this class is being instantiated
         m_Background = BitmapFactory.decodeResource(getResources(), R.drawable.gamescene);
         m_BackgroundScale = Bitmap.createScaledBitmap(m_Background, m_screenWidth, m_screenHeight, true); // Scaling of background
+
+        //Load Shared Preferences
+        sharePrefscore = getContext().getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
+        editor = sharePrefscore.edit();
+        highscore = sharePrefscore.getInt("Keyhighscore", 0);
 
         //Load Text Data
         text.setScale(30.f);
@@ -274,6 +311,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         {
             case s_play:
             {
+                System.out.print(highscore);
                 m_Background_y += 500 * dt;
                 if(m_Background_y > m_screenHeight)
                 {
@@ -332,6 +370,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                             pickUpText.setText("Bad");
                             sounds.play(soundwrong, 1.f, 1.f, 0, 0, 1.5f);
                         }
+
                         pickUpTextDuration = 1;
                     }
                 }

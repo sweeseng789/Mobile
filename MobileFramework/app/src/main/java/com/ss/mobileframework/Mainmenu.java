@@ -17,6 +17,20 @@ public class Mainmenu extends Activity implements View.OnClickListener
     private Button Highscore_Button;
     private Button Exit_Button;
 
+    /*
+    public void alertDialog_highscore()
+    {
+        int highscore = 0;
+        sharePrefscore = getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
+
+        highscore = SharePrefscore.getInt("Keyhighscore", 0);
+
+        alert_score = new AlertDialog.Builder(this);
+        alert_score.setCancelable(false);
+        alert_score.setIcon(R.drawable.score);
+        alert_score.setTitle("Your highscore").setMessage("Highscore :" + highscore).setPositiveButton("Ok", new DialogInterface.OnClickListener()
+    }
+    */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
