@@ -56,12 +56,14 @@ public class Player extends GameObject
     public void update(double dt, long SA_dt)
     {
         //Pos update
-        if(dt < 1) {
+        if(dt < 1)
+        {
             Vector3 diff = new Vector3();
             diff.x = newPos.x - pos.x;
             diff.y = newPos.y - pos.y;
 
-            if (diff.length() > 5) {
+            if (diff.length() > 5)
+            {
                 Vector3 normalizedPos = new Vector3();
                 normalizedPos.x = newPos.x - pos.x;
                 normalizedPos.y = newPos.y - pos.y;
@@ -71,7 +73,8 @@ public class Player extends GameObject
                 vel.y += normalizedPos.y * velocity * dt;
 
                 //Update Vel
-                if (!vel.isZero()) {
+                if (!vel.isZero())
+                {
                     float forceX = 0 - vel.x;
                     vel.x += forceX * dt * 8;
 

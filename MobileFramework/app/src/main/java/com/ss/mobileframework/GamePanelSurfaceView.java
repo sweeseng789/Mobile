@@ -1,14 +1,23 @@
 package com.ss.mobileframework;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
+import android.os.Debug;
+import android.text.InputFilter;
+import android.text.InputType;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -16,77 +25,118 @@ import android.view.SurfaceView;
 import com.ss.mobileframework.GameAsset.Enemy;
 import com.ss.mobileframework.GameAsset.GameObject;
 import com.ss.mobileframework.GameAsset.Item;
+import com.ss.mobileframework.GameAsset.Pause;
 import com.ss.mobileframework.Text.CText;
 import com.ss.mobileframework.GameAsset.Player;
+import com.ss.mobileframework.Utility.Alert;
+import com.ss.mobileframework.Utility.SSDLC;
+import com.ss.mobileframework.Utility.Sound;
 
-import org.w3c.dom.Text;
-
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.util.Objects;
 import java.util.Vector;
+import java.util.logging.Filter;
+
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.widget.EditText;
 
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
 {
-    private Gamepage game;    // Implement this interface to receive information about changes to the surface.
-    private GameThread myThread = null; // Thread to control the rendering
-    private Bitmap m_Background, m_BackgroundScale; //Used for rendering background
-    int m_screenWidth, m_screenHeight;     // 1b) Define Screen width and Screen height as integer
-    private short m_Background_x = 0, m_Background_y = 0;     // 1c) Variables for defining background start and end point
-    //Text
-    CText text = new CText();
-    CText debug = new CText();
-    CText pickUpText = new CText();
-    float pickUpTextDuration = -1;
-    // Variables for FPS
-    public float FPS;
-    float deltaTime;
-    long dt;
-    //Variable for location to move to
-    private short mx = 0, my = 0;
     // Variable for Game State check
     enum States
     {
         s_play,
         s_lose
-    };
-    private States GameState;
+    }
 
-    //Player
-    Player player;
+    //Variables for Game ID
+    enum GAMEID
+    {
+        s_PLAYER,
+        s_ENEMY,
+        s_CABBAGE,
+        s_DRUG,
+        s_PAUSE,
+    }
 
-    //Items
-    Vector<Item> m_cItemList;
+    //Variable for Sound List
+    enum SOUNDLIST
+    {
+        s_CORRECT,
+        s_INCORRECT,
+        s_TOTAL
+    }
 
-    //Enemy
-    Enemy enemy;
+
+
+    //==============VARIABLES==============//
+    private Gamepage game;    // Implement this interface to receive information about changes to the surface.
+    private GameThread myThread = null; // Thread to control the rendering
+    private Bitmap m_Background, m_BackgroundScale; //Used for rendering background
+    int m_screenWidth, m_screenHeight;     // 1b) Define Screen width and Screen height as integer
+    private short m_Background_x = 0, m_Background_y = 0;     // 1c) Variables for defining background start and end point
+
+    //Text
+    CText pickUpText = new CText();
+    float pickUpTextDuration = -1;
+
+    // Variables for FPS
+    float FPS;
+    CText fpsText = new CText();
+
+    private States GameState; //Game State
+
+    Player player; //Player
+    boolean movingPlayer = false;
+
+    //GameObject List
+    Vector<GameObject> m_cGameObjList = new Vector<>();
+
+    //SSDLC
+    SSDLC DLC = new SSDLC();
 
     //Game over vars
     private Bitmap loseScreen;
     CText retryText = new CText();
     CText exitText = new CText();
 
-    Vector<Integer> highscoreList;
-    boolean checkAgainstPreviousScore;
-    File f;
-    InputStream inputStream;
-    OutputStream outputStream;
-
-    MediaPlayer bgm;
-
     //Sound
-    private SoundPool sounds;
-    private int soundcorrect, soundwrong, soundbonus;
+    Sound sound = new Sound();
+    int soundList[];
+
+    //Pause
+    Pause pause;
+
+    //Load Shared
+    int highscore;
+    SharedPreferences sharePrefscore;
+    Editor editor;
+
+    //Alert
+    public AlertDialog.Builder alertDialog = null;
+    public Activity activityTracker;
+    private Alert alert;
+
+    //Method 2
+    /*
+    intent.putExtre("highscore", highscore)
+    intent.setclass(getcontext(), scorepage.class);
+    activityTracker.startActivity(intent):
+     */
+
+    /*
+    if(score > highscore)
+    {
+        editor.putInt("keyhighscore", highscore);
+        editor.commiit();
+    }
+    */
+
+
 
     //constructor for this GamePanelSurfaceView class
-    public GamePanelSurfaceView (Context context)
+    public GamePanelSurfaceView (Context context, Activity activity)
     {
         // Context is the current state of the application/object
         super(context);
@@ -96,59 +146,50 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         // Adding the callback (this) to the surface holder to intercept events
         getHolder().addCallback(this);
 
-        // 1d) Set information to get screen size
+        init(context, activity);
+
+        //Load Shared Preferences
+        sharePrefscore = getContext().getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
+        editor = sharePrefscore.edit();
+        highscore = sharePrefscore.getInt("Keyhighscore", 0);
+
+        // Create the game loop thread
+        myThread = new GameThread(getHolder(), this);
+
+        // Make the GamePanel focusable so it can handle events
+        setFocusable(true);
+    }
+
+     void getScreenInfo(Context context)
+    {
         DisplayMetrics m_metrics = context.getResources().getDisplayMetrics();
         m_screenWidth = m_metrics.widthPixels;
         m_screenHeight = m_metrics.heightPixels;
 
-        // 1e)load the image when this class is being instantiated
+        //let GameObjects know about screen height and width
+        GameObject.screenWidth = m_screenWidth;
+        GameObject.screenHeight = m_screenHeight;
+    }
+
+     void setImage()
+    {
+        //Loading Image
         m_Background = BitmapFactory.decodeResource(getResources(), R.drawable.gamescene);
         m_BackgroundScale = Bitmap.createScaledBitmap(m_Background, m_screenWidth, m_screenHeight, true); // Scaling of background
 
-        //Load Text Data
-        text.setScale(30.f);
-        text.setColor(255, 255, 128, 0);
-        text.getPos().set(0, 50, 0);
+        //Game Over Lose Screen
+        loseScreen = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.lose), m_screenWidth, m_screenHeight, true);
+    }
 
-        debug.setScale(30.f);
-        debug.setColor(255, 255, 128, 0);
-        debug.getPos().set(0, 100, 0);
+    void setText()
+    {
+        fpsText.setScale(30.f);
+        fpsText.setColor(255, 255, 128, 0);
+        fpsText.getPos().set(0, 50, 0);
 
         pickUpText.setScale(30.f);
         pickUpText.setColor(255, 0, 100, 255);
         pickUpText.setText("Good");
-
-        //set game state
-        GameState = States.s_play;
-
-        //let GameObjects know about screen height and width
-        GameObject.screenWidth = m_screenWidth;
-        GameObject.screenHeight = m_screenHeight;
-
-        //Initialize Player
-        player = new Player();
-        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
-        player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
-        player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
-
-        //Initialize item list
-        m_cItemList = new Vector<>();
-
-        Item item = new Item(Item.TYPE.s_CABBAGE, BitmapFactory.decodeResource(getResources(),R.drawable.cabage));
-        item.getPaint().setTextSize(10);
-        m_cItemList.add(item);
-
-        for(int i = 0; i < 3; ++i) {
-            item = new Item(Item.TYPE.s_DRUGS, BitmapFactory.decodeResource(getResources(), R.drawable.weed));
-            item.getPaint().setTextSize(10);
-            m_cItemList.add(item);
-        }
-
-        //init enemy
-        enemy = new Enemy(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.rainbow), m_screenWidth, m_screenHeight, true));
-
-        //game over stuff
-        loseScreen = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.lose), m_screenWidth, m_screenHeight, true);
 
         retryText.setText("Retry");
         retryText.setScale(70.f);
@@ -159,46 +200,124 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         exitText.setScale(70.f);
         exitText.setColor(255, 255, 255, 0);
         exitText.getPos().set(m_screenWidth / 4 * 3 - (float) (35 * exitText.getText().length() / 2), m_screenHeight / 2, 0);
-
-        checkAgainstPreviousScore = false;
-        highscoreList = new Vector<>();
-
-        try {
-            inputStream = context.getAssets().open("highscore.txt");
-            f = context.getFileStreamPath("highscore.txt");
-            outputStream = new FileOutputStream(f);
-        }catch (IOException e){
-
-        }
-        try
-        {
-            BufferedReader reader = new BufferedReader( new InputStreamReader(context.getAssets().open("highscore.txt")));
-            String mline;
-            while ((mline = reader.readLine()) != null)
-            {
-                highscoreList.add(Integer.parseInt(mline));
-            }
-        }
-        catch (IOException e)
-        {
-        }
-
-        bgm = MediaPlayer.create(context, R.raw.background_music);
-        bgm.setVolume(0.8f, 0.8f);
-        bgm.start();
-
-        sounds = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
-        soundcorrect = sounds.load(context, R.raw.correct, 1);
-        soundwrong = sounds.load(context, R.raw.incorrect, 1);
-
-        // Create the game loop thread
-        myThread = new GameThread(getHolder(), this);
-
-        // Make the GamePanel focusable so it can handle events
-        setFocusable(true);
     }
 
-    public void init()
+    void setGameObject()
+    {
+        //Initialize Player
+        player = new Player();
+        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
+        player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
+        player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
+        player.setGameID(GAMEID.s_PLAYER.ordinal());
+
+        Item item = new Item();
+
+        //Initialize Cabbage
+        item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage));
+        item.setGameID(GAMEID.s_CABBAGE.ordinal());
+        item.getPaint().setTextSize(10);
+        m_cGameObjList.add(item);
+
+        //Initialize Drug
+        for(int a = 0; a < 3; ++a)
+        {
+            item = new Item();
+            item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.weed));
+            item.setGameID(GAMEID.s_DRUG.ordinal());
+            System.out.println(item.getGameID());
+            item.getPaint().setTextSize(10);
+            m_cGameObjList.add(item);
+        }
+
+        //Initialize Enemy
+        Enemy enemy = new Enemy();
+        enemy.setGameID(GAMEID.s_ENEMY.ordinal());
+        enemy.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.rainbow), m_screenWidth, m_screenHeight, true));
+        m_cGameObjList.add(enemy);
+
+        //Initialize Pause Variables
+        pause = new Pause();
+        pause.setGameID(GAMEID.s_PAUSE.ordinal());
+        pause.getPos().set(72, 72, 0);
+        pause.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.pause));
+        m_cGameObjList.add(pause);
+    }
+
+    void setSound(Context context)
+    {
+        sound.setBackgroundMusic(context, R.raw.background_music);
+        sound.getBackgroundMusic().setVolume(0.8f, 0.8f);
+        sound.getBackgroundMusic().start();
+
+        sound.setUpSoundPool(SOUNDLIST.s_TOTAL.ordinal() - 1);
+        soundList = new int[SOUNDLIST.s_TOTAL.ordinal()];
+
+        soundList[SOUNDLIST.s_CORRECT.ordinal()] = sound.getSoundPool().load(context, R.raw.correct, 1);
+        soundList[SOUNDLIST.s_INCORRECT.ordinal()] = sound.getSoundPool().load(context, R.raw.incorrect, 1);
+    }
+
+    void setAlert(Activity activity)
+    {
+        //To Track an Activity
+        activityTracker = activity;
+
+        //Create Alert Dialog
+        alert = new Alert(this);
+        alertDialog = new AlertDialog.Builder(getContext());
+
+        //Allow Player to enter their name
+        final EditText input = new EditText(getContext());
+
+        //Define the input method
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        //Define max of 20 characters for name field
+        int maxLength = 20;
+        InputFilter[] FilterArray = new InputFilter[1];
+        FilterArray[0] = new InputFilter.LengthFilter(maxLength);
+        input.setFilters(FilterArray);
+
+        alertDialog.setCancelable(false);
+        //alertDialog.setView(input);
+
+        alertDialog.setPositiveButton("Ok", new DialogInterface.OnClickListener()
+        {
+            @Override
+            public void onClick(DialogInterface dialog, int which)
+            {
+//                Intent intent = new Intent();
+//                intent.setClass(getContext(), Mainmenu.class);
+//                activityTracker.startActivity(intent);
+            }
+        });
+    }
+
+    public void init(Context context, Activity activity)
+    {
+        //Get Info of Screen Size
+        getScreenInfo(context);
+
+        //Set Image
+        setImage();
+
+        //Set Text
+        setText();
+
+        //Set GameObject
+        setGameObject();
+
+        //Set Sound
+        setSound(context);
+
+        //Set Alert
+        setAlert(activity);
+
+        //set game state
+        GameState = States.s_play;
+    }
+
+    public void restartGame()
     {
         //set game state
         GameState = States.s_play;
@@ -208,25 +327,29 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
         player.setScore(0);
 
-        //Initialize item list
-
-        for(Item item : m_cItemList)
+        for(GameObject gameObj : m_cGameObjList)
         {
-            item.init();
+            if(gameObj.getGameID() == GAMEID.s_ENEMY.ordinal())
+            {
+                Enemy enemy = (Enemy)gameObj;
+                enemy.init();
+            }
+            else
+            {
+                Item item = (Item)gameObj;
+                item.init();
+            }
         }
 
-        //init enemy
-        enemy.init();
-
         pickUpTextDuration = -1;
-        checkAgainstPreviousScore = false;
     }
 
     //must implement inherited abstract methods
     public void surfaceCreated(SurfaceHolder holder)
     {
         // Create the thread
-        if (!myThread.isAlive()){
+        if (!myThread.isAlive())
+        {
             myThread = new GameThread(getHolder(), this);
             myThread.startRun(true);
             myThread.start();
@@ -253,16 +376,115 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             }
         }
 
-        bgm.stop();;
-        bgm.release();
-        sounds.unload(soundcorrect);
-        sounds.unload(soundwrong);
-        sounds.release();
+        sound.endMusic(soundList);
     }
 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
     {
 
+    }
+
+    GameObject fetchGameObject(int GameID)
+    {
+        for(GameObject gameObj : m_cGameObjList)
+        {
+            if(gameObj.getGameID() == GameID)
+            {
+                return gameObj;
+            }
+        }
+
+        return null;
+    }
+
+    void CollisionUpdate(GameObject gameObj)
+    {
+        if(gameObj.getGameID() == GAMEID.s_ENEMY.ordinal())//Enemy Update
+        {
+            //showAlert = true;
+            alert.setShowAlert(true);
+            GameState = States.s_lose;
+        }
+        else if(gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())//Cabbage Update
+        {
+            Item item = (Item)gameObj;
+            Enemy enemy = (Enemy)fetchGameObject(GAMEID.s_ENEMY.ordinal());
+
+            player.addScore(10);
+            item.randVars();
+            item.setActive(false);
+            enemy.setSpeedIncreaseForSomeTime(-80, 2);
+
+            pickUpText.setColor(255, 0, 100, 255);
+            pickUpText.setText("Good");
+            sound.getSoundPool().play(soundList[SOUNDLIST.s_CORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
+            pickUpTextDuration = 1;
+        }
+        else if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal()) //Drug Update
+        {
+            Item item = (Item)gameObj;
+            Enemy enemy = (Enemy)fetchGameObject(GAMEID.s_ENEMY.ordinal());
+
+            item.randVars();
+            item.setActive(false);
+            enemy.setSpeedIncreaseForSomeTime(50, 1);
+
+            pickUpText.setColor(255, 255, 0, 0);
+            pickUpText.setText("Bad");
+            sound.getSoundPool().play(soundList[SOUNDLIST.s_INCORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
+            pickUpTextDuration = 1;
+        }
+    }
+
+    void UsualUpdate(GameObject gameObj, float dt)
+    {
+        if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())
+        {
+            Item item = (Item) gameObj;
+            item.update(dt);
+        }
+        else if (gameObj.getGameID() == GAMEID.s_ENEMY.ordinal())
+        {
+            Enemy enemy = (Enemy) gameObj;
+            enemy.update(dt);
+        }
+    }
+
+    void UpdateGameplay(float dt, float fps)
+    {
+        fpsText.setText(Float.toString(fps));
+        m_Background_y += 500 * dt;
+        if(m_Background_y > m_screenHeight)
+        {
+            m_Background_y = 0;
+        }
+
+        player.update(dt, System.currentTimeMillis());
+
+        //Text Update
+        float text_x = player.getPos().x + player.getWidth() / (pickUpText.getText().length());
+        float text_y = player.getPos().y - player.getHeight() / 8;
+        pickUpText.getPos().set(text_x, text_y, 0);
+        if (pickUpTextDuration > 0)
+        {
+            pickUpTextDuration -= dt;
+        }
+
+        for (GameObject gameObj : m_cGameObjList)
+        {
+            Rect playerBound = DLC.getBoundingBox(player.getPos(), player.getWidth(), player.getHeight());
+            Rect gameObjBound = DLC.getBoundingBox(gameObj.getPos(), gameObj.getWidth(), gameObj.getHeight());
+
+            //Collision Occured
+            if(DLC.CheckCollision(playerBound, gameObjBound))
+            {
+                CollisionUpdate(gameObj);
+            }
+            else
+            {
+                UsualUpdate(gameObj, dt);
+            }
+        }
     }
 
     //============ UPDATE ============//
@@ -274,144 +496,97 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         {
             case s_play:
             {
-                m_Background_y += 500 * dt;
-                if(m_Background_y > m_screenHeight)
-                {
-                    m_Background_y = 0;
-                }
-
-
-                //Text Update
-                text.setText(Float.toString(FPS));
-
-                //Player Update
-                player.update(dt, System.currentTimeMillis());
-                float x1 = player.getPos().x;
-                float y1 = player.getPos().y;
-                float w1 = player.getSprite().getSpriteWidth();
-                float h1 = player.getSprite().getSpriteHeight();
-
-                //Text Update
-                float text_x = player.getPos().x + player.getSprite().getSpriteWidth()/(pickUpText.getText().length());
-                float text_y = player.getPos().y - player.getSprite().getSpriteHeight()/8;
-                pickUpText.getPos().set(text_x, text_y, 0);
-                if(pickUpTextDuration > 0)
-                    pickUpTextDuration -= dt;
-
-                //Item Update
-                for(Item item : m_cItemList)
-                {
-                    item.update(dt);
-
-                    float x2 = item.getPos().x;
-                    float y2 = item.getPos().y;
-                    float w2 = item.getBitmap().getWidth();
-                    float h2 = item.getBitmap().getHeight();
-
-                    //Collision Check with player
-                    if (CheckCollision((int) x1, (int) y1, (int) w1, (int) h1, (int) x2, (int) y2, (int) w2, (int) h2) && item.getActive())
-                    {
-                        if(item.isCabbage())
-                        {
-                            player.addScore(10);
-                            item.randVars();
-                            item.setActive(false);
-                            enemy.setSpeedIncreaseForSomeTime(-80, 2);
-
-                            pickUpText.setColor(255, 0, 100, 255);
-                            pickUpText.setText("Good");
-                            sounds.play(soundcorrect, 1.f, 1.f, 0, 0, 1.5f);
-                        }
-                        else if(item.isDrug())
-                        {
-                            item.randVars();
-                            item.setActive(false);
-                            enemy.setSpeedIncreaseForSomeTime(50, 1);
-
-                            pickUpText.setColor(255, 255, 0, 0);
-                            pickUpText.setText("Bad");
-                            sounds.play(soundwrong, 1.f, 1.f, 0, 0, 1.5f);
-                        }
-                        pickUpTextDuration = 1;
-                    }
-                }
-
-                //update enemy
-                enemy.update(dt);
-                float x2 = enemy.getPos().x;
-                float y2 = enemy.getPos().y;
-                float w2 = enemy.getBitmap().getWidth();
-                float h2 = enemy.getBitmap().getHeight();
-                if (CheckCollision((int) x2, (int) y2, (int) w2, (int) h2, (int) x1, (int) y1, (int) w1, (int) h1) && enemy.getActive())
-                {
-                    GameState = States.s_lose;
-                }
+                UpdateGameplay(dt, fps);
             }
             break;
 
             case s_lose:
-                break;
-        }
-    }
-
-    // Rendering is done on Canvas
-    public void doDraw(Canvas canvas)
-    {
-        switch (GameState)
-        {
-            case s_play:
-                RenderGameplay(canvas);
-                break;
-            case s_lose:
-                RenderLose(canvas);
+                if(alert.getShowAlert() && !alert.getShowed())
+                {
+                    alert.setShowed(true);
+                    alertDialog.setMessage("Your Score is " + player.getScore());
+                    alert.RunAlert();
+                    alert.setShowAlert(false);
+                    alert.setShowed(false);
+                }
                 break;
         }
     }
 
     //============ RENDER ============//
+    public void doDraw(Canvas canvas)
+    {
+        if(canvas != null)
+        {
+            switch (GameState)
+            {
+                case s_play:
+                    RenderGameplay(canvas);
+                    break;
+                case s_lose:
+                    RenderLose(canvas);
+                    break;
+            }
+        }
+    }
+
+    //============ RENDER GAMEPLAY ============//
     public void RenderGameplay(Canvas canvas)
     {
-        // 2) Re-draw 2nd image after the 1st image ends
-        if(canvas == null) //New Canvas
-        {
-            return;
-        }
         canvas.drawBitmap(m_BackgroundScale, m_Background_x, m_Background_y, null);
         canvas.drawBitmap(m_BackgroundScale, m_Background_x, m_Background_y - m_screenHeight, null);
 
         //Render player
         player.getSprite().draw(canvas, player.getPos());
 
-        //Render Items
-        for(Item item: m_cItemList)
+        //Render GameObject
+        for(GameObject gameObj : m_cGameObjList)
         {
-            if(item.getActive())
+            if(gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())
+            {
+                Item item = (Item)gameObj;
                 canvas.drawBitmap(item.getBitmap(), item.getPos().x, item.getPos().y, item.getPaint());
+            }
+            else
+            {
+                canvas.drawBitmap(gameObj.getBitmap(), gameObj.getPos().x, gameObj.getPos().y, null);
+            }
         }
-
-        //Render Enemy
-        canvas.drawBitmap(enemy.getBitmap(), enemy.getPos().x, enemy.getPos().y, null);
 
         //Debug text
-        canvas.drawText(text.getText(), text.getPos().x, text.getPos().y, text.getPaint()); // Align text to top left
+        canvas.drawText(fpsText.getText(), fpsText.getPos().x, fpsText.getPos().y, fpsText.getPaint()); // Align text to top left
         canvas.drawText(player.getText().getText(), player.getText().getPos().x, player.getText().getPos().y, player.getText().getPaint());
+
         if(pickUpTextDuration > 0)
-        canvas.drawText(pickUpText.getText(), pickUpText. getPos().x, pickUpText.getPos().y, pickUpText.getPaint());
+        {
+            canvas.drawText(pickUpText.getText(), pickUpText.getPos().x, pickUpText.getPos().y, pickUpText.getPaint());
+        }
     }
 
-    //render lose screen
+    //============ RENDER LOSE SCREEN ============//
     public void RenderLose(Canvas canvas)
     {
-        // 2) Re-draw 2nd image after the 1st image ends
-        if(canvas == null) //New Canvas
-        {
-            return;
-        }
-
         canvas.drawBitmap(loseScreen, 0, 0, null);
 
         canvas.drawText(retryText.getText(), retryText.getPos().x, retryText.getPos().y, retryText.getPaint());
         canvas.drawText(exitText.getText(), exitText.getPos().x, exitText.getPos().y, exitText.getPaint());
+    }
+
+
+    public void PauseUpdate()
+    {
+        if(pause.getGamePaused())//Currently Game is paused
+        {
+            pause.setGamePaused(false);
+            myThread.unPause();
+            sound.getBackgroundMusic().start();
+        }
+        else //Game is not paused
+        {
+            pause.setGamePaused(true);
+            myThread.pause();
+            sound.getBackgroundMusic().pause();
+        }
     }
 
 
@@ -430,21 +605,32 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                 {
                     case s_play:
                     {
-                        //limit player on the road
-                        if (X < m_screenWidth / 7.2)
-                            X = (short) (m_screenWidth / 7.2);
-                        if (X > (m_screenWidth - m_screenWidth / 7.2))
-                            X = (short) (m_screenWidth - m_screenWidth / 7.2);
+                        Rect pauseBound = DLC.getBoundingBox(pause.getPos(), pause.getWidth(), pause.getHeight());
 
-                        player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
-                        player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+                        if(pauseBound.contains((int)X, (int)Y))//Pressing Pause
+                        {
+                            movingPlayer = false;
+                            PauseUpdate();
+                        }
+                        else
+                        {
+                            movingPlayer = true;
+                            //limit player on the road
+                            if (X < m_screenWidth / 7.2)
+                                X = (short) (m_screenWidth / 7.2);
+                            if (X > (m_screenWidth - m_screenWidth / 7.2))
+                                X = (short) (m_screenWidth - m_screenWidth / 7.2);
+
+                            player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+                            player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+                        }
                     }
                     break;
                     case s_lose:
                     {
                         if (X < m_screenWidth / 2)
                         {
-                            init();
+                            restartGame();
                         }
                         else
                         {
@@ -457,38 +643,20 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             break;
             case MotionEvent.ACTION_MOVE:
             {
-                //limit player on the road
-                if (X < m_screenWidth / 7.2)
-                    X = (short) (m_screenWidth / 7.2);
-                if (X > (m_screenWidth - m_screenWidth / 7.2))
-                    X = (short) (m_screenWidth - m_screenWidth / 7.2);
+                if(movingPlayer)
+                {
+                    //limit player on the road
+                    if (X < m_screenWidth / 7.2)
+                        X = (short) (m_screenWidth / 7.2);
+                    if (X > (m_screenWidth - m_screenWidth / 7.2))
+                        X = (short) (m_screenWidth - m_screenWidth / 7.2);
 
-                player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
-                player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+                    player.getNewPos().x = (short) (X - player.getSprite().getBitmap().getWidth() / 13);
+                    player.getNewPos().y = (short) (Y - player.getSprite().getBitmap().getHeight() / 2);
+                }
             }
             break;
         }
         return true;
-    }
-
-    public boolean CheckCollision(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2)
-    {
-        if(x2 >= x1 && x2 <= x1 + w1)           // Checking top Left
-        {
-            if(y2 >= y1 && y2 <= y1 + h1)
-                return true;
-            if(y2 + h2 >= y1 && y2 + h2 <= y1 + h1) // Check bottom left
-                return true;
-        }
-
-        if(x2 + w2 >= x1 && x2 + w2 <= x1 + w1) // Check top Right
-        {
-            if (y2 >= y1 && y2 <= y1 + h1)
-                return true;
-
-            if (y2 + h2 >= y1 && y2 + h2 <= y1 + h1) // Check bottom Right
-                return true;
-        }
-        return false;
     }
 }
