@@ -21,7 +21,7 @@ public class Gamepage extends Activity
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         //Set GamePanelSurfaceView as the View
-        setContentView(new GamePanelSurfaceView(this));
+        setContentView(new GamePanelSurfaceView(this, this));
     }
 
     protected void onPause()

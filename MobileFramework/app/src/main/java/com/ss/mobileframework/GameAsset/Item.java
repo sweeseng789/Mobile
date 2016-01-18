@@ -2,6 +2,7 @@ package com.ss.mobileframework.GameAsset;
 
 import android.graphics.Bitmap;
 import android.graphics.Paint;
+import android.util.Log;
 
 import com.ss.mobileframework.GamePanelSurfaceView;
 import com.ss.mobileframework.Utility.Vector3;
@@ -17,7 +18,6 @@ public class Item extends GameObject
     {
         s_DRUGS,
         s_CABBAGE,
-        s_TOTAL
     };
 
     //==============VARIABLES==============//
@@ -35,6 +35,17 @@ public class Item extends GameObject
         init();
         paint = new Paint();
     }
+
+    public Item()
+    {
+//        active = false;
+//        MinMaxSpeed = 200;
+//        randVars();
+//        respawnTime = (float) (Math.random() * 15 + 5); //from 5 to 15
+        init();
+        paint = new Paint();
+    }
+
     //==============Init==============//
     public void init()
     {
@@ -65,7 +76,6 @@ public class Item extends GameObject
 
     public void update(double dt)
     {
-       // bounds.contains((int)pos.x, (int)pos.y, bitmap.getWidth(), bitmap.getHeight());
         if(dt < 1)
         {
             MinMaxSpeed += dt * 10;
@@ -91,25 +101,39 @@ public class Item extends GameObject
 
     public void randVars()
     {
-        if(type == TYPE.s_CABBAGE)
-        {
-            pos.x = 0;
-            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth()) //while it spawns on the pavement
-                pos.x = (float) Math.random() * screenWidth + 1;
-            pos.y = -50;
-            respawnTime = (float) (Math.random() * 10 + 5);
-            while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
-                speed = (float) (Math.random() * (MinMaxSpeed) + (MinMaxSpeed-50)); //from 600 to 300
-        }
-        else if(type == TYPE.s_DRUGS)
-        {
-            pos.x = 0;
-            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth())
-                pos.x = (float) Math.random() * screenWidth + 1;
-            pos.y = -50;
-            respawnTime = (float) (Math.random() * 5 + 1);
-            while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
-                speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50));
-        }
+//        if(type == TYPE.s_CABBAGE)
+//        {
+//            pos.x = 0;
+//            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth()) //while it spawns on the pavement
+//                pos.x = (float) Math.random() * screenWidth + 1;
+//            pos.y = -50;
+//            respawnTime = (float) (Math.random() * 10 + 5);
+//            while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
+//                speed = (float) (Math.random() * (MinMaxSpeed) + (MinMaxSpeed-50)); //from 600 to 300
+//        }
+//        else if(type == TYPE.s_DRUGS)
+//        {
+//            pos.x = 0;
+//            while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth())
+//                pos.x = (float) Math.random() * screenWidth + 1;
+//            pos.y = -50;
+//            respawnTime = (float) (Math.random() * 5 + 1);
+//            while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
+//                speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50));
+//        }
+
+//        pos.x = 0;
+//        while (pos.x < screenWidth/7.2 || pos.x > screenWidth - screenWidth/7.2 - getBitmap().getWidth())
+//            pos.x = (float) Math.random() * screenWidth + 1;
+//        pos.y = -50;
+//        respawnTime = (float) (Math.random() * 5 + 1);
+//        while(speed < MinMaxSpeed - 50 || speed > MinMaxSpeed + 50)
+//            speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50));
+
+        Random random = new Random();
+        pos.x = screenWidth * 0.5f + (float)(random.nextInt(300 + 1 - -300) - 300);
+        pos.y = -100;
+        respawnTime = (float)Math.random() * 10 + 5;
+        speed = (float)Math.random() * (MinMaxSpeed) + (MinMaxSpeed - 50);
     }
 }

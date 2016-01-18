@@ -20,6 +20,13 @@ public class Enemy extends GameObject
         active = true;
     }
 
+    public Enemy()
+    {
+        init();
+        active = true;
+    }
+
+
     //==============Init==============//
     public void init()
     {

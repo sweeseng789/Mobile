@@ -13,8 +13,9 @@ public class GameObject
     //==============VARIABLES==============//
     protected Vector3 pos;
     protected boolean active;
-    protected Bitmap bitmap; //For displaying image only
-    protected SpriteAnimation sprite; //For displaying Sprite Animation
+    protected Bitmap bitmap = null; //For displaying image only
+    protected SpriteAnimation sprite = null; //For displaying Sprite Animation
+    protected int gameID;
     public static int screenWidth, screenHeight;
 
     //==============CONSTRUCTOR==============//
@@ -41,6 +42,37 @@ public class GameObject
         this.bitmap = bitmap;
     }
 
+    public void setGameID(int gameID)
+    {
+        this.gameID = gameID;
+    }
+
+    public int getWidth()
+    {
+        if(bitmap != null) //User is using Bitmap
+        {
+            return bitmap.getWidth();
+        }
+        else //User is using Sprite Animation
+        {
+            return getSprite().getSpriteWidth();
+        }
+    }
+
+    public int getHeight()
+    {
+        if(bitmap != null) //User is using Bitmap
+        {
+            return bitmap.getHeight();
+        }
+        else //User is using Sprite Animation
+        {
+            return getSprite().getSpriteHeight();
+        }
+
+    }
+
+
     //==============GETTER==============//
     public Vector3 getPos()
     {
@@ -60,5 +92,10 @@ public class GameObject
     public Bitmap getBitmap()
     {
         return bitmap;
+    }
+
+    public int getGameID()
+    {
+        return gameID;
     }
 }
