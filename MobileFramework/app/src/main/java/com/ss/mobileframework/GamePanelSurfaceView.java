@@ -26,9 +26,11 @@ import com.ss.mobileframework.GameAsset.Enemy;
 import com.ss.mobileframework.GameAsset.GameObject;
 import com.ss.mobileframework.GameAsset.Item;
 import com.ss.mobileframework.GameAsset.Pause;
+import com.ss.mobileframework.Highscore.Highscore;
 import com.ss.mobileframework.Text.CText;
 import com.ss.mobileframework.GameAsset.Player;
 import com.ss.mobileframework.Utility.Alert;
+import com.ss.mobileframework.Utility.Data;
 import com.ss.mobileframework.Utility.SSDLC;
 import com.ss.mobileframework.Utility.Sound;
 
@@ -109,31 +111,13 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     Pause pause;
 
     //Load Shared
+    Data database;
     int highscore;
-    SharedPreferences sharePrefscore;
-    Editor editor;
 
     //Alert
     public AlertDialog.Builder alertDialog = null;
     public Activity activityTracker;
     private Alert alert;
-
-    //Method 2
-    /*
-    intent.putExtre("highscore", highscore)
-    intent.setclass(getcontext(), scorepage.class);
-    activityTracker.startActivity(intent):
-     */
-
-    /*
-    if(score > highscore)
-    {
-        editor.putInt("keyhighscore", highscore);
-        editor.commiit();
-    }
-    */
-
-
 
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context, Activity activity)
@@ -149,9 +133,17 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         init(context, activity);
 
         //Load Shared Preferences
-        sharePrefscore = getContext().getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
-        editor = sharePrefscore.edit();
-        highscore = sharePrefscore.getInt("Keyhighscore", 0);
+//        sharePrefscore = getContext().getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
+//        editor = sharePrefscore.edit();
+//        highscore = sharePrefscore.getInt("Keyhighscore", 0);
+
+        database = new Data(context, "Settings");
+
+        //Set naming convention
+        database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
+
+        //Set Variables
+        highscore = database.getSharedDatabase().getInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), 0);
 
         // Create the game loop thread
         myThread = new GameThread(getHolder(), this);
@@ -257,7 +249,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         soundList[SOUNDLIST.s_INCORRECT.ordinal()] = sound.getSoundPool().load(context, R.raw.incorrect, 1);
     }
 
-    void setAlert(Activity activity)
+    void setAlert(final Activity activity)
     {
         //To Track an Activity
         activityTracker = activity;
@@ -288,6 +280,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             {
 //                Intent intent = new Intent();
 //                intent.setClass(getContext(), Mainmenu.class);
+//                activityTracker.startActivity(intent);
+
+//                Intent intent = new Intent();
+//                //Push highscore to another activity
+//                intent.putExtra("highscore", highscore);
+//                intent.setClass(getContext(), Highscore.class);
 //                activityTracker.startActivity(intent);
             }
         });
@@ -508,6 +506,14 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     alert.RunAlert();
                     alert.setShowAlert(false);
                     alert.setShowed(false);
+                }
+
+                if(player.getScore() > highscore)
+                {
+//                    editor.putInt("Keyhighscore", player.getScore());
+//                    editor.commit();
+                    database.getEditor().putInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), player.getScore());
+                    database.getEditor().commit();
                 }
                 break;
         }
