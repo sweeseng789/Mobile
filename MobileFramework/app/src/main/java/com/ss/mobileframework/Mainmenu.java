@@ -1,14 +1,18 @@
 package com.ss.mobileframework;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.widget.Toast;
 
-import com.ss.mobileframework.Highscore.Highscore;
+import com.ss.mobileframework.Utility.Data;
 
 public class Mainmenu extends Activity implements View.OnClickListener
 {
@@ -17,8 +21,26 @@ public class Mainmenu extends Activity implements View.OnClickListener
     private Button Highscore_Button;
     private Button Exit_Button;
 
+    //SharedPreferences sharePrefscore;
+    Data database;
+
+    /*
+    public void alertDialog_highscore()
+    {
+        int highscore = 0;
+        sharePrefscore = getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
+
+        highscore = SharePrefscore.getInt("Keyhighscore", 0);
+
+        alert_score = new AlertDialog.Builder(this);
+        alert_score.setCancelable(false);
+        alert_score.setIcon(R.drawable.score);
+        alert_score.setTitle("Your highscore").setMessage("Highscore :" + highscore).setPositiveButton("Ok", new DialogInterface.OnClickListener()
+    }
+    */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
 
         //Hide title
@@ -39,31 +61,37 @@ public class Mainmenu extends Activity implements View.OnClickListener
 
         Exit_Button = (Button)findViewById(R.id.Exit_Button);
         Exit_Button.setOnClickListener(this);
+
+        database = new Data(this, "Settings");
+        database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
     }
 
     public void onClick(View v)
     {
         Intent intent = new Intent();
 
-        if(v == Start_Button)
+        if(v != Highscore_Button)
         {
-            intent.setClass(this, Gamepage.class);
+            if(v == Start_Button)
+            {
+                intent.setClass(this, Gamepage.class);
+            }
+            else if (v == Help_Button)
+            {
+                intent.setClass(this, Helppage.class);
+            }
+            startActivity(intent);
         }
-        else if(v == Highscore_Button)
+        else
         {
-            intent.setClass(this, Highscore.class);
+            loadHighscore();
         }
-        else if (v == Help_Button)
-        {
-            intent.setClass(this, Helppage.class);
-        }
+    }
 
-        else if (v == Exit_Button)
-        {
-
-        }
-
-        startActivity(intent);
+    public void loadHighscore()
+    {
+        int highscore = database.getSharedDatabase().getInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), 0);
+        Toast.makeText(this, "Highscore: " + highscore, Toast.LENGTH_LONG).show();
     }
 
     protected void onPause()
