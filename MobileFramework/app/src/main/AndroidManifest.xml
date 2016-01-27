@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.ss.mobileframework" >
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -48,6 +49,16 @@
             </intent-filter>
         </activity>
 
+        <!--Facebook PAGE-->
+        <activity android:name=".Facebookpage"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <!--Only One launcher, rest use default -->
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!--GAME PAGE-->
         <activity android:name=".Gamepage"
             android:screenOrientation="portrait">
@@ -59,7 +70,6 @@
         </activity>
 
         <!-- FACEBOOK -->
-        <uses-permission android:name="android.permission.INTERNET"/>
         <activity android:name="com.facebook.FacebookActivity" android:label="@string/app_name" android:theme="@android:style/Theme.Translucent.NoTitleBar" android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"/>
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/app_id"/>
         <provider android:name="com.facebook.FacebookContentProvider" android:exported="true" android:authorities="com.facebook.app.FacebookContentProvider425583524307431"/>
