@@ -50,7 +50,6 @@ public class Facebookpage extends FragmentActivity implements View.OnClickListen
     private AccessTokenTracker accessTokenTracker;
     private ProfileTracker profileTracker;
 
-    //SharedPreferences sharePrefscore;
     Data database;
 
     @Override
@@ -108,11 +107,11 @@ public class Facebookpage extends FragmentActivity implements View.OnClickListen
             }
         });
 
-        Back_Button = (Button)findViewById(R.id.back_Button);
+        Back_Button = (Button)findViewById(R.id.FB_back_Button);
         Back_Button.setOnClickListener(this);
 
-        //database = new Data(this, "Settings");
-       // database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
+        database = new Data(this, "Settings");
+        database.getDatabaseNaming()[Data.DATANAME.s_LATESTSCORE.ordinal()] = "Latestscore";
     }
 
     public void onClick(View v)
@@ -127,7 +126,7 @@ public class Facebookpage extends FragmentActivity implements View.OnClickListen
     }
 
     private void sharePhotoToFacebook(){
-        int highscore = 0;
+        int highscore = database.getSharedDatabase().getInt(database.getDatabaseNaming(Data.DATANAME.s_LATESTSCORE.ordinal()), 1);
 
         //SharePrefscore = getSharedPreferences("Scoredata", Context.MODE_PRIVATE);
 
@@ -136,7 +135,7 @@ public class Facebookpage extends FragmentActivity implements View.OnClickListen
         Bitmap image = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher);
         SharePhoto photo = new SharePhoto.Builder()
                 .setBitmap(image)
-                .setCaption("You have played Change. Your current Score is " + highscore + ".")
+                .setCaption("You have played [Change]. Your current Score is " + highscore + ".")
                 .build();
 
         SharePhotoContent content = new SharePhotoContent.Builder()

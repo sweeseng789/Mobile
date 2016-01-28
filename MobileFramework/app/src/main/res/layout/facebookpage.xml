@@ -17,7 +17,8 @@
         android:layout_gravity="center"
         android:id="@+id/picture"
         android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true" />
+        android:layout_centerHorizontal="true"
+        />
 
     <com.facebook.login.widget.LoginButton
         android:layout_height="wrap_content"
@@ -27,20 +28,25 @@
         android:layout_below="@+id/user_name"
         android:layout_alignParentStart="true" />
 
-    <Button android:background="@drawable/fbicon"
-        android:layout_height="100dp"
-        android:layout_width="100dp"
+    <Button android:background="@drawable/facebook_share_button2"
+        android:layout_height="60dp"
+        android:layout_width="120dp"
         android:id="@+id/btn_FB"
         android:layout_alignParentBottom="true"
         android:layout_toEndOf="@+id/picture"
-        android:layout_marginBottom="30dp" />
+        android:layout_marginBottom="30dp"
+        android:layout_marginLeft="-40dp" />
 
-    <Button android:background="@drawable/fbicon"
-        android:layout_height="100dp"
-        android:layout_width="100dp"
-        android:id="@+id/back_Button"
+    <Button android:background="@drawable/button_normal"
+        android:layout_height="60dp"
+        android:layout_width="120dp"
+        android:text = "back"
+        android:textSize="18dp"
+        android:textColor="#000000"
+        android:id="@+id/FB_back_Button"
         android:layout_alignTop="@+id/btn_FB"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:layout_marginLeft="20dp" />
 
     <TextView android:layout_height="wrap_content"
         android:layout_width="wrap_content"

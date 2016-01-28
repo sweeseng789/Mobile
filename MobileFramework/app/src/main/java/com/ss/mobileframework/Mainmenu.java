@@ -78,7 +78,7 @@ public class Mainmenu extends Activity implements View.OnClickListener
             }
             else if (v == Help_Button)
             {
-                intent.setClass(this, Facebookpage.class);
+                intent.setClass(this, Helppage.class);
             }
             startActivity(intent);
         }
