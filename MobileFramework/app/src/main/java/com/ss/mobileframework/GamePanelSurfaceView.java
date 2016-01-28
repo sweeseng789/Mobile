@@ -2,6 +2,7 @@ package com.ss.mobileframework;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Debug;
+import android.os.Vibrator;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.util.DisplayMetrics;
@@ -33,6 +35,7 @@ import com.ss.mobileframework.Utility.Alert;
 import com.ss.mobileframework.Utility.Data;
 import com.ss.mobileframework.Utility.SSDLC;
 import com.ss.mobileframework.Utility.Sound;
+import com.ss.mobileframework.Utility.Vector3;
 
 import java.util.Objects;
 import java.util.Vector;
@@ -107,6 +110,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     Sound sound = new Sound();
     int soundList[];
 
+    //vibration
+    Vibrator v;
+
     //Pause
     Pause pause;
 
@@ -118,6 +124,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     public AlertDialog.Builder alertDialog = null;
     public Activity activityTracker;
     private Alert alert;
+
+    //facebook button
+    private Bitmap facebookButton;
 
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context, Activity activity)
@@ -141,6 +150,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         //Set naming convention
         database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
+        database.getDatabaseNaming()[Data.DATANAME.s_LATESTSCORE.ordinal()] = "Latestscore";
 
         //Set Variables
         highscore = database.getSharedDatabase().getInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), 0);
@@ -234,6 +244,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         pause.getPos().set(72, 72, 0);
         pause.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.pause));
         m_cGameObjList.add(pause);
+
+        facebookButton = BitmapFactory.decodeResource(getResources(), R.drawable.facebook_share_button);
     }
 
     void setSound(Context context)
@@ -402,6 +414,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             //showAlert = true;
             alert.setShowAlert(true);
             GameState = States.s_lose;
+
+            StartVibrate(1000);
         }
         else if(gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())//Cabbage Update
         {
@@ -431,6 +445,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             pickUpText.setText("Bad");
             sound.getSoundPool().play(soundList[SOUNDLIST.s_INCORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
             pickUpTextDuration = 1;
+
+            StartVibrate(200);
         }
     }
 
@@ -515,6 +531,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     database.getEditor().putInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), player.getScore());
                     database.getEditor().commit();
                 }
+
+                //save latest score
+                database.getEditor().putInt(database.getDatabaseNaming(Data.DATANAME.s_LATESTSCORE.ordinal()), player.getScore());
+                database.getEditor().commit();
                 break;
         }
     }
@@ -576,8 +596,15 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         canvas.drawText(retryText.getText(), retryText.getPos().x, retryText.getPos().y, retryText.getPaint());
         canvas.drawText(exitText.getText(), exitText.getPos().x, exitText.getPos().y, exitText.getPaint());
+
+        canvas.drawBitmap(facebookButton, m_screenWidth / 2 - facebookButton.getWidth() / 2, m_screenHeight - facebookButton.getHeight(), null);
     }
 
+    public void StartVibrate(long ms)
+    {
+        v = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(ms);
+    }
 
     public void PauseUpdate()
     {
@@ -634,7 +661,17 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     break;
                     case s_lose:
                     {
-                        if (X < m_screenWidth / 2)
+                        Rect FBbuttonBound = DLC.getBoundingBox(new Vector3((m_screenWidth/2 - facebookButton.getWidth()/2), (m_screenHeight - facebookButton.getHeight()), 0),
+                                facebookButton.getWidth(), facebookButton.getHeight());
+
+                        if(FBbuttonBound.contains((int)X, (int)Y))//Pressing Pause
+                        {
+                            game.finish();
+                            Intent intent = new Intent();
+                            intent.setClass(getContext(), Facebookpage.class);
+                            activityTracker.startActivity(intent);
+                        }
+                        else if (X < m_screenWidth / 2)
                         {
                             restartGame();
                         }
