@@ -73,8 +73,6 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         s_TOTAL
     }
 
-
-
     //==============VARIABLES==============//
     private Gamepage game;    // Implement this interface to receive information about changes to the surface.
     private GameThread myThread = null; // Thread to control the rendering
@@ -127,6 +125,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
     //facebook button
     private Bitmap facebookButton;
+
+    //power-ups
+    public boolean speedPowerUpActive = false;
+    public float speedPowerUpTimer = 0;
 
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context, Activity activity)
@@ -208,7 +210,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     {
         //Initialize Player
         player = new Player();
-        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
+        player.setSpriteAnimation(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.player), (int)(m_screenWidth * 1.5f), (int)(m_screenWidth * 1.5f / 6), false), 320, 64, 6, 6);
         player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
         player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
         player.setGameID(GAMEID.s_PLAYER.ordinal());
@@ -216,7 +218,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         Item item = new Item();
 
         //Initialize Cabbage
-        item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage));
+        item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage), m_screenWidth/6, m_screenWidth/6, false));
         item.setGameID(GAMEID.s_CABBAGE.ordinal());
         item.getPaint().setTextSize(10);
         m_cGameObjList.add(item);
@@ -225,7 +227,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         for(int a = 0; a < 3; ++a)
         {
             item = new Item();
-            item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.weed));
+            item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.weed), m_screenWidth/6, m_screenWidth/6, false));
             item.setGameID(GAMEID.s_DRUG.ordinal());
             System.out.println(item.getGameID());
             item.getPaint().setTextSize(10);
@@ -425,7 +427,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             player.addScore(10);
             item.randVars();
             item.setActive(false);
-            enemy.setSpeedIncreaseForSomeTime(-80, 2);
+            enemy.setSpeedIncreaseForSomeTime(-5, 1.5f);
 
             pickUpText.setColor(255, 0, 100, 255);
             pickUpText.setText("Good");
@@ -439,7 +441,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
             item.randVars();
             item.setActive(false);
-            enemy.setSpeedIncreaseForSomeTime(50, 1);
+            enemy.setSpeedIncreaseForSomeTime(3, 1);
 
             pickUpText.setColor(255, 255, 0, 0);
             pickUpText.setText("Bad");
@@ -452,15 +454,21 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
     void UsualUpdate(GameObject gameObj, float dt)
     {
-        if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())
+        if(speedPowerUpActive)
         {
-            Item item = (Item) gameObj;
-            item.update(dt);
+            speedPowerUpTimer += dt;
+            if(speedPowerUpTimer > 10)
+                speedPowerUpActive = false;
         }
-        else if (gameObj.getGameID() == GAMEID.s_ENEMY.ordinal())
+        else
         {
-            Enemy enemy = (Enemy) gameObj;
-            enemy.update(dt);
+            if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal()) {
+                Item item = (Item) gameObj;
+                item.update(dt);
+            } else if (gameObj.getGameID() == GAMEID.s_ENEMY.ordinal()) {
+                Enemy enemy = (Enemy) gameObj;
+                enemy.update(dt);
+            }
         }
     }
 

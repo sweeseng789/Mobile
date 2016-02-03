@@ -8,7 +8,7 @@ import android.graphics.Bitmap;
 public class Enemy extends GameObject
 {
     //==============VARIABLES==============//
-    private float defaultSpeed = 10;
+    private float defaultSpeed = screenHeight/150;
     private float speed;
     private float timeOfSpeedIncrease;
 
@@ -56,9 +56,9 @@ public class Enemy extends GameObject
         }
     }
 
-    public void setSpeedIncreaseForSomeTime(float speed, float time)
+    public void setSpeedIncreaseForSomeTime(float speedMultiplyer, float time)
     {
-        this.speed = speed;
+        this.speed = speedMultiplyer * defaultSpeed;
         timeOfSpeedIncrease = time;
     }
 }
