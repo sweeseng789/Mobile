@@ -40,6 +40,16 @@
             </intent-filter>
         </activity>
 
+        <!--HIGHSCORE-->
+        <activity android:name=".ShopPage.Shop"
+            android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <!--Only One launcher, rest use default -->
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!--HELP PAGE-->
         <activity android:name=".Helppage"
             android:screenOrientation="portrait">
