@@ -12,7 +12,6 @@ import android.widget.TextView;
 
 import com.ss.mobileframework.Mainmenu;
 import com.ss.mobileframework.R;
-import com.ss.mobileframework.ShopPage.View_Shop;
 
 /**
  * Created by sweeseng789 on 9/12/2015.
@@ -31,31 +30,32 @@ public class Shop extends Activity implements View.OnClickListener
         //Hide top bar
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        setContentView(R.layout.highscore);
-        Typeface myTypeface = Typeface.createFromAsset(getAssets(), "Supernatural_Knight.ttf");
-        TextView myTextView = (TextView)findViewById(R.id.textView);
-        myTextView.setTypeface(myTypeface);
+        //setContentView(R.layout.highscore);
+//        Typeface myTypeface = Typeface.createFromAsset(getAssets(), "Supernatural_Knight.ttf");
+//        TextView myTextView = (TextView)findViewById(R.id.textView);
+//        myTextView.setTypeface(myTypeface);
 
 
-        Back_Button = (Button)findViewById(R.id.back_Button);
-        Back_Button.setOnClickListener(this);
+//        Back_Button = (Button)findViewById(R.id.back_Button);
+//        Back_Button.setOnClickListener(this);
 
         //Set GamePanelSurfaceView as the View
-        setContentView(new View_Shop(this));
+        setContentView(new View_Shop(this, this));
     }
 
     public void onClick(View v)
     {
-        Intent intent = new Intent();
-
-        if(v == Back_Button)
-        {
-            intent.setClass(this, Mainmenu.class);
-        }
-        startActivity(intent);
+//        Intent intent = new Intent();
+//
+//        if(v == Back_Button)
+//        {
+//            intent.setClass(this, Mainmenu.class);
+//        }
+//        startActivity(intent);
     }
     protected void returnToMenu()
     {
+        onDestroy();
         Intent intent = new Intent();
         intent.setClass(this, Mainmenu.class);
         startActivity(intent);
