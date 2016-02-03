@@ -50,7 +50,7 @@ public class Item extends GameObject
     public void init()
     {
         active = false;
-        MinMaxSpeed = 200;
+        MinMaxSpeed = screenHeight/10;
         randVars();
         respawnTime = (float) (Math.random() * 15 + 5); //from 5 to 15
     }
@@ -78,7 +78,7 @@ public class Item extends GameObject
     {
         if(dt < 1)
         {
-            MinMaxSpeed += dt * 10;
+            MinMaxSpeed += dt * screenHeight/200;
             if(getActive())
             {
                 pos.y += speed * dt;

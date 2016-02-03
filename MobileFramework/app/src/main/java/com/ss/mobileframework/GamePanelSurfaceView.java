@@ -126,6 +126,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     //facebook button
     private Bitmap facebookButton;
 
+    //combo
+    private int comboCount = 1;
+    private CText comboTextBig  = new CText();
+    private CText comboTextSmall  = new CText();
+    private Bitmap comboSplash;
+
     //power-ups
     public boolean speedPowerUpActive = false;
     public float speedPowerUpTimer = 0;
@@ -195,6 +201,16 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         pickUpText.setColor(255, 0, 100, 255);
         pickUpText.setText("Good");
 
+        comboTextBig.setText("X " + comboCount);
+        comboTextBig.setScale(m_screenWidth / 5);
+        comboTextBig.setColor(255, 0, 0, 0);
+        comboTextBig.getPos().set(m_screenWidth / 2.8f, m_screenHeight / 3, 0);
+
+        comboTextSmall.setText("X " + comboCount);
+        comboTextSmall.setScale(60.f);
+        comboTextSmall.setColor(255, 0, 0, 0);
+        comboTextSmall.getPos().set(0, 170, 0);
+
         retryText.setText("Retry");
         retryText.setScale(70.f);
         retryText.setColor(255, 255, 255, 0);
@@ -215,13 +231,18 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
         player.setGameID(GAMEID.s_PLAYER.ordinal());
 
-        Item item = new Item();
+        Item item;
 
         //Initialize Cabbage
-        item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage), m_screenWidth/6, m_screenWidth/6, false));
-        item.setGameID(GAMEID.s_CABBAGE.ordinal());
-        item.getPaint().setTextSize(10);
-        m_cGameObjList.add(item);
+        for(int a = 0; a < 2; ++a)
+        {
+            item = new Item();
+            item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage), m_screenWidth/6, m_screenWidth/6, false));
+            item.setGameID(GAMEID.s_CABBAGE.ordinal());
+            System.out.println(item.getGameID());
+            item.getPaint().setTextSize(10);
+            m_cGameObjList.add(item);
+        }
 
         //Initialize Drug
         for(int a = 0; a < 3; ++a)
@@ -248,6 +269,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         m_cGameObjList.add(pause);
 
         facebookButton = BitmapFactory.decodeResource(getResources(), R.drawable.facebook_share_button);
+        comboSplash = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.combo), m_screenWidth/2, m_screenHeight/7, false);
     }
 
     void setSound(Context context)
@@ -424,7 +446,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             Item item = (Item)gameObj;
             Enemy enemy = (Enemy)fetchGameObject(GAMEID.s_ENEMY.ordinal());
 
-            player.addScore(10);
+            player.addScore(10 * comboCount);
             item.randVars();
             item.setActive(false);
             enemy.setSpeedIncreaseForSomeTime(-5, 1.5f);
@@ -433,6 +455,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             pickUpText.setText("Good");
             sound.getSoundPool().play(soundList[SOUNDLIST.s_CORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
             pickUpTextDuration = 1;
+
+            comboCount++;
+            comboTextSmall.setText("X " + comboCount);
         }
         else if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal()) //Drug Update
         {
@@ -447,6 +472,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             pickUpText.setText("Bad");
             sound.getSoundPool().play(soundList[SOUNDLIST.s_INCORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
             pickUpTextDuration = 1;
+
+            comboCount = 1;
+            comboTextSmall.setText("X " + comboCount);
 
             StartVibrate(200);
         }
@@ -590,10 +618,18 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         //Debug text
         canvas.drawText(fpsText.getText(), fpsText.getPos().x, fpsText.getPos().y, fpsText.getPaint()); // Align text to top left
         canvas.drawText(player.getText().getText(), player.getText().getPos().x, player.getText().getPos().y, player.getText().getPaint());
+        canvas.drawText(comboTextSmall.getText(), comboTextSmall.getPos().x, comboTextSmall.getPos().y, comboTextSmall.getPaint());
 
         if(pickUpTextDuration > 0)
         {
             canvas.drawText(pickUpText.getText(), pickUpText.getPos().x, pickUpText.getPos().y, pickUpText.getPaint());
+            if(comboCount%5 == 0)
+            {
+                comboTextBig.setText("X " + comboCount);
+                comboTextBig.getPos().set(m_screenWidth / 2 - (float)((float)(m_screenWidth/5) * (float)(comboTextBig.getText().length()/2)), m_screenHeight / 3, 0);
+                canvas.drawText(comboTextBig.getText(), comboTextBig.getPos().x, comboTextBig.getPos().y, comboTextBig.getPaint());canvas.drawBitmap(comboSplash, m_screenWidth / 2 - comboSplash.getWidth() / 2, m_screenHeight / 2.6f - comboSplash.getHeight() / 2, null);
+                canvas.drawBitmap(comboSplash, m_screenWidth / 2 - comboSplash.getWidth() / 2, m_screenHeight / 2.6f - comboSplash.getHeight() / 2, null);
+            }
         }
     }
 

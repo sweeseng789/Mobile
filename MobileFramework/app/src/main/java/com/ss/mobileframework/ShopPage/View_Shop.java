@@ -11,7 +11,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.ss.mobileframework.GameThread;
-import com.ss.mobileframework.Highscore.Shop;
+//import com.ss.mobileframework.Highscore.Shop;
 import com.ss.mobileframework.R;
 import com.ss.mobileframework.Text.CText;
 import com.ss.mobileframework.Utility.Vector3;
