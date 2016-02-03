@@ -131,8 +131,8 @@ public class Item extends GameObject
 //            speed = (float) (Math.random() * (MinMaxSpeed+50) + (MinMaxSpeed-50));
 
         Random random = new Random();
-        pos.x = screenWidth * 0.5f + (float)(random.nextInt(300 + 1 - -300) - 300);
-        pos.y = -100;
+        pos.x = screenWidth * 0.15f + (float)(random.nextInt((int)(screenWidth * 0.55)));
+        pos.y = -screenWidth/6;
         respawnTime = (float)Math.random() * 10 + 5;
         speed = (float)Math.random() * (MinMaxSpeed) + (MinMaxSpeed - 50);
     }
