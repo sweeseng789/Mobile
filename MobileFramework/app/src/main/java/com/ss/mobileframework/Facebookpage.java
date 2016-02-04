@@ -144,6 +144,8 @@ public class Facebookpage extends FragmentActivity implements View.OnClickListen
 
         ShareApi.share(content, null);
 
+        Toast.makeText(this, "Posted!", Toast.LENGTH_LONG).show();
+
     }
 
     @Override
