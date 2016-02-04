@@ -543,11 +543,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         }
         else
         {
-            speedPowerUpTimer += dt;
-            if(speedPowerUpTimer > 30)
-            {
-                speedPowerUpTimer = 0;
-                speedPowerUpActive = false;
+            if(dt < 1) {
+                speedPowerUpTimer += dt;
+                if (speedPowerUpTimer > 30) {
+                    speedPowerUpTimer = 0;
+                    speedPowerUpActive = false;
+                }
             }
         }
 
