@@ -12,11 +12,13 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.widget.Toast;
 
+import com.ss.mobileframework.ShopPage.Shop;
 import com.ss.mobileframework.Utility.Data;
 
 public class Mainmenu extends Activity implements View.OnClickListener
 {
     private Button Start_Button;
+    private Button Shop_Button;
     private Button Help_Button;
     private Button Highscore_Button;
     private Button Exit_Button;
@@ -53,6 +55,9 @@ public class Mainmenu extends Activity implements View.OnClickListener
         Start_Button = (Button)findViewById(R.id.Start_Button);
         Start_Button.setOnClickListener(this);
 
+        Shop_Button = (Button)findViewById(R.id.Shop_Button);
+        Shop_Button.setOnClickListener(this);
+
         Highscore_Button = (Button)findViewById(R.id.Highscore_Button);
         Highscore_Button.setOnClickListener(this);
 
@@ -79,6 +84,10 @@ public class Mainmenu extends Activity implements View.OnClickListener
             else if (v == Help_Button)
             {
                 intent.setClass(this, Helppage.class);
+            }
+            else if(v == Shop_Button)
+            {
+                intent.setClass(this, Shop.class);
             }
             startActivity(intent);
         }

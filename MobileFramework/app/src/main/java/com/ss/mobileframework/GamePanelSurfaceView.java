@@ -2,6 +2,7 @@ package com.ss.mobileframework;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Application;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.os.Debug;
+import android.os.Vibrator;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.util.DisplayMetrics;
@@ -26,6 +28,7 @@ import com.ss.mobileframework.GameAsset.Enemy;
 import com.ss.mobileframework.GameAsset.GameObject;
 import com.ss.mobileframework.GameAsset.Item;
 import com.ss.mobileframework.GameAsset.Pause;
+import com.ss.mobileframework.GameAsset.SpriteAnimation;
 import com.ss.mobileframework.Highscore.Highscore;
 import com.ss.mobileframework.Text.CText;
 import com.ss.mobileframework.GameAsset.Player;
@@ -33,6 +36,7 @@ import com.ss.mobileframework.Utility.Alert;
 import com.ss.mobileframework.Utility.Data;
 import com.ss.mobileframework.Utility.SSDLC;
 import com.ss.mobileframework.Utility.Sound;
+import com.ss.mobileframework.Utility.Vector3;
 
 import java.util.Objects;
 import java.util.Vector;
@@ -41,6 +45,7 @@ import java.util.logging.Filter;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.widget.EditText;
+import android.widget.Toast;
 
 
 public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.Callback
@@ -69,8 +74,6 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         s_INCORRECT,
         s_TOTAL
     }
-
-
 
     //==============VARIABLES==============//
     private Gamepage game;    // Implement this interface to receive information about changes to the surface.
@@ -107,6 +110,9 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     Sound sound = new Sound();
     int soundList[];
 
+    //vibration
+    Vibrator v;
+
     //Pause
     Pause pause;
 
@@ -119,6 +125,14 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     public Activity activityTracker;
     private Alert alert;
 
+    //facebook button
+    private Bitmap facebookButton;
+    
+    //power-ups
+    public boolean speedPowerUpActive = false;
+    public float speedPowerUpTimer = 0;
+
+
     //constructor for this GamePanelSurfaceView class
     public GamePanelSurfaceView (Context context, Activity activity)
     {
@@ -130,6 +144,12 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         // Adding the callback (this) to the surface holder to intercept events
         getHolder().addCallback(this);
 
+        database = new Data(context, "Settings");
+
+        //Set naming convention
+        database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
+        database.getDatabaseNaming()[Data.DATANAME.s_LATESTSCORE.ordinal()] = "Latestscore";
+        database.getDatabaseNaming()[Data.DATANAME.s_POWERUP.ordinal()] = "PowerUp";
         init(context, activity);
 
         //Load Shared Preferences
@@ -137,10 +157,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 //        editor = sharePrefscore.edit();
 //        highscore = sharePrefscore.getInt("Keyhighscore", 0);
 
-        database = new Data(context, "Settings");
 
-        //Set naming convention
-        database.getDatabaseNaming()[Data.DATANAME.s_HIGHSCORE.ordinal()] = "Highscore";
 
         //Set Variables
         highscore = database.getSharedDatabase().getInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), 0);
@@ -166,7 +183,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
      void setImage()
     {
         //Loading Image
-        m_Background = BitmapFactory.decodeResource(getResources(), R.drawable.gamescene);
+        m_Background = BitmapFactory.decodeResource(getResources(), R.drawable.gamescene3);
         m_BackgroundScale = Bitmap.createScaledBitmap(m_Background, m_screenWidth, m_screenHeight, true); // Scaling of background
 
         //Game Over Lose Screen
@@ -198,7 +215,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
     {
         //Initialize Player
         player = new Player();
-        player.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.player), 320, 64, 6, 6);
+        player.setSpriteAnimation(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.player), (int) (m_screenWidth * 1.5f), (int) (m_screenWidth * 1.5f / 6), false), 320, 64, 6, 6);
         player.getPos().set(m_screenWidth / 2 - player.getSprite().getSpriteWidth() / 2, m_screenHeight / 2, 0);
         player.getNewPos().set(player.getPos().x, player.getPos().y, player.getPos().z);
         player.setGameID(GAMEID.s_PLAYER.ordinal());
@@ -206,7 +223,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         Item item = new Item();
 
         //Initialize Cabbage
-        item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage));
+        item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.cabage), m_screenWidth / 6, m_screenWidth / 6, false));
         item.setGameID(GAMEID.s_CABBAGE.ordinal());
         item.getPaint().setTextSize(10);
         m_cGameObjList.add(item);
@@ -215,7 +232,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         for(int a = 0; a < 3; ++a)
         {
             item = new Item();
-            item.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.weed));
+            item.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.weed), m_screenWidth / 6, m_screenWidth / 6, false));
             item.setGameID(GAMEID.s_DRUG.ordinal());
             System.out.println(item.getGameID());
             item.getPaint().setTextSize(10);
@@ -226,6 +243,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         Enemy enemy = new Enemy();
         enemy.setGameID(GAMEID.s_ENEMY.ordinal());
         enemy.setBitmap(Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.rainbow), m_screenWidth, m_screenHeight, true));
+        //enemy.setSpriteAnimation(BitmapFactory.decodeResource(getResources(), R.drawable.policeman), 0, 0, 4, 4);
         m_cGameObjList.add(enemy);
 
         //Initialize Pause Variables
@@ -234,6 +252,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         pause.getPos().set(72, 72, 0);
         pause.setBitmap(BitmapFactory.decodeResource(getResources(), R.drawable.pause));
         m_cGameObjList.add(pause);
+
+        facebookButton = BitmapFactory.decodeResource(getResources(), R.drawable.facebook_share_button);
     }
 
     void setSound(Context context)
@@ -249,7 +269,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         soundList[SOUNDLIST.s_INCORRECT.ordinal()] = sound.getSoundPool().load(context, R.raw.incorrect, 1);
     }
 
-    void setAlert(final Activity activity)
+    void setAlert(final Activity activity, final Context context)
     {
         //To Track an Activity
         activityTracker = activity;
@@ -309,7 +329,15 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         setSound(context);
 
         //Set Alert
-        setAlert(activity);
+        setAlert(activity, context);
+
+
+        if(database.getSharedDatabase().getBoolean(database.getDatabaseNaming()[Data.DATANAME.s_POWERUP.ordinal()], false) == true)
+        {
+            speedPowerUpActive = true;
+            database.getEditor().putBoolean(database.getDatabaseNaming(Data.DATANAME.s_POWERUP.ordinal()), false);
+            database.getEditor().commit();
+        }
 
         //set game state
         GameState = States.s_play;
@@ -402,6 +430,8 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             //showAlert = true;
             alert.setShowAlert(true);
             GameState = States.s_lose;
+
+            StartVibrate(1000);
         }
         else if(gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())//Cabbage Update
         {
@@ -411,7 +441,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             player.addScore(10);
             item.randVars();
             item.setActive(false);
-            enemy.setSpeedIncreaseForSomeTime(-80, 2);
+            enemy.setSpeedIncreaseForSomeTime(-5, 1.5f);
 
             pickUpText.setColor(255, 0, 100, 255);
             pickUpText.setText("Good");
@@ -425,26 +455,27 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
             item.randVars();
             item.setActive(false);
-            enemy.setSpeedIncreaseForSomeTime(50, 1);
+            enemy.setSpeedIncreaseForSomeTime(3, 1);
 
             pickUpText.setColor(255, 255, 0, 0);
             pickUpText.setText("Bad");
             sound.getSoundPool().play(soundList[SOUNDLIST.s_INCORRECT.ordinal()], 1.f, 1.f, 0, 0, 1.5f);
             pickUpTextDuration = 1;
+
+            StartVibrate(200);
         }
     }
 
     void UsualUpdate(GameObject gameObj, float dt)
     {
-        if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal())
         {
-            Item item = (Item) gameObj;
-            item.update(dt);
-        }
-        else if (gameObj.getGameID() == GAMEID.s_ENEMY.ordinal())
-        {
-            Enemy enemy = (Enemy) gameObj;
-            enemy.update(dt);
+            if (gameObj.getGameID() == GAMEID.s_DRUG.ordinal() || gameObj.getGameID() == GAMEID.s_CABBAGE.ordinal()) {
+                Item item = (Item) gameObj;
+                item.update(dt);
+            } else if (gameObj.getGameID() == GAMEID.s_ENEMY.ordinal()) {
+                Enemy enemy = (Enemy) gameObj;
+                enemy.update(dt);
+            }
         }
     }
 
@@ -468,21 +499,30 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             pickUpTextDuration -= dt;
         }
 
-        for (GameObject gameObj : m_cGameObjList)
+        if(!speedPowerUpActive)
         {
-            Rect playerBound = DLC.getBoundingBox(player.getPos(), player.getWidth(), player.getHeight());
-            Rect gameObjBound = DLC.getBoundingBox(gameObj.getPos(), gameObj.getWidth(), gameObj.getHeight());
+            for (GameObject gameObj : m_cGameObjList) {
+                Rect playerBound = DLC.getBoundingBox(player.getPos(), player.getWidth(), player.getHeight());
+                Rect gameObjBound = DLC.getBoundingBox(gameObj.getPos(), gameObj.getWidth(), gameObj.getHeight());
 
-            //Collision Occured
-            if(DLC.CheckCollision(playerBound, gameObjBound))
-            {
-                CollisionUpdate(gameObj);
-            }
-            else
-            {
-                UsualUpdate(gameObj, dt);
+                //Collision Occured
+                if (DLC.CheckCollision(playerBound, gameObjBound)) {
+                    CollisionUpdate(gameObj);
+                } else {
+                    UsualUpdate(gameObj, dt);
+                }
             }
         }
+        else
+        {
+            speedPowerUpTimer += dt;
+            if(speedPowerUpTimer > 30)
+            {
+                speedPowerUpTimer = 0;
+                speedPowerUpActive = false;
+            }
+        }
+
     }
 
     //============ UPDATE ============//
@@ -494,6 +534,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
         {
             case s_play:
             {
+                if(speedPowerUpActive)
+                {
+                    dt *= 10;
+                }
                 UpdateGameplay(dt, fps);
             }
             break;
@@ -515,6 +559,10 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     database.getEditor().putInt(database.getDatabaseNaming(Data.DATANAME.s_HIGHSCORE.ordinal()), player.getScore());
                     database.getEditor().commit();
                 }
+
+                //save latest score
+                database.getEditor().putInt(database.getDatabaseNaming(Data.DATANAME.s_LATESTSCORE.ordinal()), player.getScore());
+                database.getEditor().commit();
                 break;
         }
     }
@@ -559,6 +607,7 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
             }
         }
 
+
         //Debug text
         canvas.drawText(fpsText.getText(), fpsText.getPos().x, fpsText.getPos().y, fpsText.getPaint()); // Align text to top left
         canvas.drawText(player.getText().getText(), player.getText().getPos().x, player.getText().getPos().y, player.getText().getPaint());
@@ -576,8 +625,15 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
 
         canvas.drawText(retryText.getText(), retryText.getPos().x, retryText.getPos().y, retryText.getPaint());
         canvas.drawText(exitText.getText(), exitText.getPos().x, exitText.getPos().y, exitText.getPaint());
+
+        canvas.drawBitmap(facebookButton, m_screenWidth / 2 - facebookButton.getWidth() / 2, m_screenHeight - facebookButton.getHeight(), null);
     }
 
+    public void StartVibrate(long ms)
+    {
+        v = (Vibrator) getContext().getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(ms);
+    }
 
     public void PauseUpdate()
     {
@@ -634,7 +690,17 @@ public class GamePanelSurfaceView extends SurfaceView implements SurfaceHolder.C
                     break;
                     case s_lose:
                     {
-                        if (X < m_screenWidth / 2)
+                        Rect FBbuttonBound = DLC.getBoundingBox(new Vector3((m_screenWidth/2 - facebookButton.getWidth()/2), (m_screenHeight - facebookButton.getHeight()), 0),
+                                facebookButton.getWidth(), facebookButton.getHeight());
+
+                        if(FBbuttonBound.contains((int)X, (int)Y))//Pressing Pause
+                        {
+                            game.finish();
+                            Intent intent = new Intent();
+                            intent.setClass(getContext(), Facebookpage.class);
+                            activityTracker.startActivity(intent);
+                        }
+                        else if (X < m_screenWidth / 2)
                         {
                             restartGame();
                         }

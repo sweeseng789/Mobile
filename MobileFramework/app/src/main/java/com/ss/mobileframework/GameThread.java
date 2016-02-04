@@ -6,19 +6,22 @@ import android.graphics.Canvas;
 import android.view.View;
 
 import com.ss.mobileframework.Highscore.View_Highscore;
+import com.ss.mobileframework.ShopPage.View_Shop;
 
 public class GameThread extends Thread
 {
     enum UPDATESTATE
     {
         e_GAME,
-        e_HIGHSCORE
+        e_HIGHSCORE,
+        e_SHOPPAGE
     };
 
     //==============VARIABLES==============//
     UPDATESTATE state;
     private GamePanelSurfaceView myView;    // The actual view that handles inputs and draws to the surface
     private View_Highscore highscoreView;   // The actual view that handles inputs and draws to the surface
+    private View_Shop shopView;   // The actual view that handles inputs and draws to the surface
     private SurfaceHolder holder;           // Surface holder that can access the physical surface
     private boolean isRun;                  // Flag to hold game state
     private boolean isPause;
@@ -47,6 +50,16 @@ public class GameThread extends Thread
         highscoreView = myView;
         this.holder = holder;
         state = UPDATESTATE.e_HIGHSCORE;
+    }
+
+    public GameThread(SurfaceHolder holder, View_Shop myView)
+    {
+        super();
+        isRun = true;
+        isPause = false;
+        shopView = myView;
+        this.holder = holder;
+        state = UPDATESTATE.e_SHOPPAGE;
     }
 
     //==============SETTER==============//
@@ -176,6 +189,52 @@ public class GameThread extends Thread
         calculateFPS();
     }
 
+    public void update_ShopPage()
+    {
+        //Update game state and render state to the screen
+        Canvas c = null;
+        try
+        {
+            c = this.holder.lockCanvas();
+            synchronized(holder)
+            {
+                if (shopView != null)
+                {
+                    if (getPause() == false)
+                    {
+                        shopView.update(dt, fps);
+                        shopView.doDraw(c);
+                    }
+                }
+            }
+
+            synchronized(holder)
+            {
+                while (getPause()==true)
+                {
+                    try
+                    {
+                        holder.wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+                    }
+                }
+            }
+        }
+
+        finally
+        {
+            if (c!=null)
+            {
+                holder.unlockCanvasAndPost(c);
+            }
+        }
+        calculateFPS();
+    }
+
+
+
     @Override
     public void run()
     {
@@ -189,6 +248,13 @@ public class GameThread extends Thread
 
                 case e_HIGHSCORE:
                     update_Highscore();
+                    break;
+
+                case e_SHOPPAGE:
+                    update_ShopPage();
+                    break;
+
+                default:
                     break;
             }
         }

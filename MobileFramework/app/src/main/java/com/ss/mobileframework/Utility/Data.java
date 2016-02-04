@@ -12,6 +12,9 @@ public class Data
     public enum DATANAME
     {
         s_HIGHSCORE,
+        s_LATESTSCORE,
+        s_COINCOUNT,
+        s_POWERUP,
         s_TOTAL
     }
 
