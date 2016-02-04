@@ -13,6 +13,8 @@ public class Data
     {
         s_HIGHSCORE,
         s_LATESTSCORE,
+        s_COINCOUNT,
+        s_POWERUP,
         s_TOTAL
     }
 

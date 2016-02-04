@@ -22,7 +22,7 @@ public class Player extends GameObject
     {
         vel = new Vector3();
         newPos = new Vector3();
-        velocity = 100;
+        velocity = screenHeight/6;
         score = 0;
         text = new CText();
         text.getPos().set(0, 100, 0);

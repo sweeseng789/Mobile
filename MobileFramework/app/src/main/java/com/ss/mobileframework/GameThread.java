@@ -198,7 +198,7 @@ public class GameThread extends Thread
             c = this.holder.lockCanvas();
             synchronized(holder)
             {
-                if (highscoreView != null)
+                if (shopView != null)
                 {
                     if (getPause() == false)
                     {
